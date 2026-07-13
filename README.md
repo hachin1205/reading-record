@@ -25,6 +25,7 @@ The first `GET /api/media` seeds the current sample library when the media table
 - `POST /api/experiences`
 - `DELETE /api/experiences/:id`
 - `GET /api/search/books?q=:query` (NDL Search with optional openBD cover enrichment)
+- `GET /api/search/anime?q=:query` (AniList anime metadata and cover art)
 
 `SUPABASE_SECRET_KEY` is server-only and must never use a `NEXT_PUBLIC_` prefix. The write routes must be protected with Supabase Auth before public deployment because the secret key bypasses Row Level Security.
 

@@ -144,12 +144,15 @@ export function AdminPage() {
       })
       .slice(0, 8);
   }, [query, records, selectedType]);
-  const searchResults = selectedType === "book" && query.trim().length >= 2
+  const usesExternalSearch = selectedType === "book" || selectedType === "video";
+  const searchResults = usesExternalSearch && query.trim().length >= 2
     ? sourceResults
     : localSearchResults;
 
   useEffect(() => {
-    if (selectedType !== "book" || query.trim().length < 2) {
+    const endpoint = selectedType === "book" ? "books" : selectedType === "video" ? "anime" : null;
+    const sourceName = selectedType === "book" ? "NDL Search" : "AniList";
+    if (!endpoint || query.trim().length < 2) {
       setSourceResults([]);
       setSourceError(null);
       setSourceLoading(false);
@@ -161,15 +164,15 @@ export function AdminPage() {
       setSourceLoading(true);
       setSourceError(null);
       try {
-        const response = await fetch(`/api/search/books?q=${encodeURIComponent(query.trim())}`, {
+        const response = await fetch(`/api/search/${endpoint}?q=${encodeURIComponent(query.trim())}`, {
           signal: controller.signal,
         });
         const payload = (await response.json()) as { data?: MediaItem[]; error?: string };
-        if (!response.ok) throw new Error(payload.error ?? "NDL Search failed");
+        if (!response.ok) throw new Error(payload.error ?? `${sourceName} failed`);
         setSourceResults(payload.data ?? []);
       } catch (error) {
         if (controller.signal.aborted) return;
-        setSourceError(error instanceof Error ? error.message : "NDL Search failed");
+        setSourceError(error instanceof Error ? error.message : `${sourceName} failed`);
         setSourceResults([]);
       } finally {
         if (!controller.signal.aborted) setSourceLoading(false);
@@ -923,7 +926,7 @@ function ContentWorkspace({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={17} />
               <input
                 className="h-12 w-full rounded-md border border-line bg-panel pl-10 pr-3 text-sm outline-none focus:border-ink"
-                placeholder={selectedType === "book" ? "Japanese title, author, or ISBN" : "Title, creator, or source id"}
+                placeholder={selectedType === "book" ? "Japanese title, author, or ISBN" : selectedType === "video" ? "Japanese or English anime title" : "Title, creator, or source id"}
                 value={query}
                 onChange={(event) => onQueryChange(event.target.value)}
               />
@@ -939,11 +942,20 @@ function ContentWorkspace({
               . Covers are enriched through openBD when available.
             </p>
           ) : null}
+          {selectedType === "video" ? (
+            <p className="text-xs text-muted">
+              Anime metadata and cover art provided by{" "}
+              <a className="underline underline-offset-2" href="https://anilist.co/" rel="noreferrer" target="_blank">
+                AniList
+              </a>
+              . Other video types can still be created manually.
+            </p>
+          ) : null}
 
           <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto pr-1">
             {sourceLoading ? (
               <div className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
-                Searching NDL Search...
+                Searching {selectedType === "book" ? "NDL Search" : "AniList"}...
               </div>
             ) : null}
             {sourceError ? (
@@ -973,7 +985,7 @@ function ContentWorkspace({
                     </span>
                   </div>
                   <p className="mt-2 text-xs font-semibold text-muted">
-                    {[item.publisher, item.isbn].filter(Boolean).join(" · ") || item.status.replace("_", " ")}
+                    {[item.publisher, item.isbn, item.subtype].filter(Boolean).join(" · ") || item.status.replace("_", " ")}
                   </p>
                 </div>
               </button>
@@ -1010,7 +1022,7 @@ function ContentWorkspace({
                   {candidate.isbn ? <p className="text-sm text-muted">ISBN {candidate.isbn}</p> : null}
                   {candidate.sourceUrl ? (
                     <a className="mt-2 inline-block text-sm font-semibold underline underline-offset-2" href={candidate.sourceUrl} rel="noreferrer" target="_blank">
-                      View NDL record
+                      View {candidate.sourceName || "source"} record
                     </a>
                   ) : null}
                 </div>
