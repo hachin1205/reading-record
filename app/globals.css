@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --paper: 244 239 228;
+  --panel: 252 249 241;
+  --ink: 35 33 29;
+  --muted: 104 97 86;
+  --line: 217 207 189;
+  --shelf: 190 166 130;
+  --shelf-back: 234 224 205;
+  --shadow: 58 45 28;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: 20 20 18;
+  --panel: 29 29 26;
+  --ink: 241 236 225;
+  --muted: 166 157 141;
+  --line: 69 64 56;
+  --shelf: 92 76 55;
+  --shelf-back: 38 35 30;
+  --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: rgb(var(--paper));
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.38), transparent 28rem),
+    rgb(var(--paper));
+  color: rgb(var(--ink));
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.shelf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--muted), 0.35) transparent;
+}
+
+.shelf-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.shelf-scroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--muted), 0.28);
+  border-radius: 999px;
+}
+
+.object-shadow {
+  box-shadow:
+    0 16px 28px rgba(var(--shadow), 0.16),
+    0 2px 3px rgba(var(--shadow), 0.16);
+}
+
+.shelf-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 32%, rgba(0, 0, 0, 0.08) 100%),
+    linear-gradient(90deg, rgba(var(--shelf), 0.7), rgba(var(--shelf), 0.95), rgba(var(--shelf), 0.68));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.24),
+    inset 0 -8px 12px rgba(0, 0, 0, 0.08),
+    0 18px 28px rgba(var(--shadow), 0.16);
+}
+
+.bookcase-frame {
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(var(--shelf), 0.38) 0 10px, transparent 10px),
+    linear-gradient(90deg, rgba(var(--shadow), 0.07), transparent 4.5rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 16rem),
+    rgba(var(--shelf), 0.18);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--line), 0.9),
+    inset 14px 0 14px rgba(255, 255, 255, 0.05),
+    inset 22px 0 24px rgba(var(--shadow), 0.04),
+    inset -22px 0 26px rgba(var(--shadow), 0.08),
+    0 30px 70px rgba(var(--shadow), 0.14);
+}
+
+.bookcase-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 5;
+  width: 10px;
+  border-right: 1px solid rgba(var(--shadow), 0.08);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 48%, rgba(0, 0, 0, 0.06)),
+    rgba(var(--shelf), 0.48);
+  box-shadow:
+    inset -3px 0 6px rgba(var(--shadow), 0.06),
+    6px 0 16px rgba(var(--shadow), 0.035);
+  pointer-events: none;
+}
+
+.shelf-bay {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 38%, rgba(var(--shadow), 0.04)),
+    linear-gradient(180deg, rgba(var(--shelf-back), 0.96), rgba(var(--shelf-back), 0.82));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 -16px 22px rgba(var(--shadow), 0.08),
+    0 18px 34px rgba(var(--shadow), 0.12);
+}
+
+.cover-fallback {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(160deg, var(--fallback-a), var(--fallback-b));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
