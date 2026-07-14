@@ -1020,11 +1020,24 @@ function ContentWorkspace({
                   </p>
                   {candidate.publisher ? <p className="mt-2 text-sm text-muted">{candidate.publisher}</p> : null}
                   {candidate.isbn ? <p className="text-sm text-muted">ISBN {candidate.isbn}</p> : null}
-                  {candidate.sourceUrl ? (
-                    <a className="mt-2 inline-block text-sm font-semibold underline underline-offset-2" href={candidate.sourceUrl} rel="noreferrer" target="_blank">
-                      View {candidate.sourceName || "source"} record
-                    </a>
-                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {candidate.sourceUrl ? (
+                      <a className="inline-flex h-9 items-center rounded-md border border-line bg-panel px-3 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-ink" href={candidate.sourceUrl} rel="noreferrer" target="_blank">
+                        View {candidate.sourceName || "source"} record
+                      </a>
+                    ) : null}
+                    {candidate.type === "book" ? (
+                      <a
+                        className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-panel px-3 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-ink"
+                        href={googleImageSearchUrl(candidate)}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <Search size={15} />
+                        Search Google Images
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -1078,6 +1091,17 @@ function ContentWorkspace({
       </div>
     </div>
   );
+}
+
+function googleImageSearchUrl(item: MediaItem) {
+  const terms = [
+    `"${item.title}"`,
+    `"${item.creator}"`,
+    item.isbn ? `"${item.isbn}"` : null,
+    "book cover",
+  ].filter(Boolean);
+
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(terms.join(" "))}`;
 }
 
 function LibraryWorkspace({
