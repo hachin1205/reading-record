@@ -15,6 +15,7 @@ import {
   PenLine,
   Plus,
   Search,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -49,6 +50,15 @@ const statusOptions: Array<{ value: MediaStatus; label: string }> = [
 ];
 
 const libraryPageSize = 8;
+
+const generatedCoverPalettes: Array<[string, string]> = [
+  ["#7f302c", "#d8a46f"],
+  ["#243f5a", "#91b7b3"],
+  ["#394d35", "#d1bf73"],
+  ["#4d3556", "#c6a1b8"],
+  ["#28303c", "#a9a18f"],
+  ["#6d4930", "#d8bd88"],
+];
 
 export function AdminPage() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
@@ -939,7 +949,7 @@ function ContentWorkspace({
               <a className="underline underline-offset-2" href="https://ndlsearch.ndl.go.jp/" rel="noreferrer" target="_blank">
                 NDL Search
               </a>
-              . Covers are enriched through openBD when available.
+              . Covers are enriched through openBD when available; otherwise you can generate a placeholder.
             </p>
           ) : null}
           {selectedType === "video" ? (
@@ -1027,17 +1037,19 @@ function ContentWorkspace({
                       </a>
                     ) : null}
                     {candidate.type === "book" ? (
-                      <a
+                      <button
                         className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-panel px-3 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-ink"
-                        href={googleImageSearchUrl(candidate)}
-                        rel="noreferrer"
-                        target="_blank"
+                        type="button"
+                        onClick={() => onCandidateChange(generateCover(candidate))}
                       >
-                        <Search size={15} />
-                        Search Google Images
-                      </a>
+                        <Sparkles size={15} />
+                        Generate cover
+                      </button>
                     ) : null}
                   </div>
+                  {candidate.type === "book" ? (
+                    <p className="mt-2 text-xs text-muted">Generated covers are placeholders, not official publisher artwork.</p>
+                  ) : null}
                 </div>
               </div>
 
@@ -1093,15 +1105,22 @@ function ContentWorkspace({
   );
 }
 
-function googleImageSearchUrl(item: MediaItem) {
-  const terms = [
-    `"${item.title}"`,
-    `"${item.creator}"`,
-    item.isbn ? `"${item.isbn}"` : null,
-    "book cover",
-  ].filter(Boolean);
+function generateCover(item: MediaItem): MediaItem {
+  const currentIndex = generatedCoverPalettes.findIndex(
+    ([first, second]) => first === item.coverTone[0] && second === item.coverTone[1],
+  );
+  const seed = `${item.title}:${item.creator}`
+    .split("")
+    .reduce((total, character) => total + character.codePointAt(0)!, 0);
+  const nextIndex = currentIndex >= 0
+    ? (currentIndex + 1) % generatedCoverPalettes.length
+    : seed % generatedCoverPalettes.length;
 
-  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(terms.join(" "))}`;
+  return {
+    ...item,
+    coverUrl: undefined,
+    coverTone: generatedCoverPalettes[nextIndex],
+  };
 }
 
 function LibraryWorkspace({
