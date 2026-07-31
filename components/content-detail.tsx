@@ -94,19 +94,18 @@ export function ContentDetail({
   const earlierNotes = notes.filter(
     (note) => !note.experienceId || !linkedExperienceIds.has(note.experienceId),
   );
-  const panelWidth = origin ? Math.min(1024, origin.viewportWidth - 16) : 1024;
-  const panelHeight = origin ? Math.min(720, origin.viewportHeight - 16) : 720;
-  const originScale = origin
-    ? Math.max(0.16, Math.min(0.34, Math.max(origin.width / panelWidth, origin.height / panelHeight)))
-    : 0.97;
-  const panelOrigin = origin
+  const openingCoverWidth = item?.type === "video" ? 176 : 160;
+  const openingCoverHeight = item?.type === "video" ? 176 : 240;
+  const coverOrigin = origin
     ? {
         x: origin.centerX - origin.viewportWidth / 2,
         y: origin.centerY - origin.viewportHeight / 2,
-        scale: originScale,
-        opacity: 0.42,
+        scale: Math.max(
+          0.16,
+          Math.min(1, Math.max(origin.width / openingCoverWidth, origin.height / openingCoverHeight)),
+        ),
       }
-    : { x: 0, y: 28, scale: 0.97, opacity: 0.8 };
+    : { x: 0, y: 18, scale: 0.82 };
 
   return (
     <AnimatePresence>
@@ -120,14 +119,47 @@ export function ContentDetail({
             if (event.target === event.currentTarget) onClose();
           }}
         >
+          <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center" aria-hidden="true">
+            <motion.div
+              className={cn(
+                "relative overflow-hidden border border-black/10 bg-panel shadow-[0_26px_70px_rgba(0,0,0,0.34)]",
+                item.type === "video" ? "h-44 w-44 rounded-[7px]" : "h-60 w-40 rounded-[5px]",
+              )}
+              initial={{ ...coverOrigin, opacity: 0.72, rotateY: 0 }}
+              animate={{
+                x: [coverOrigin.x, 0, 0],
+                y: [coverOrigin.y, 0, 0],
+                scale: [coverOrigin.scale, 1, 1],
+                opacity: [0.72, 1, 0],
+                rotateY: [0, 0, -104],
+              }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.7, ease: [0.22, 0.72, 0.2, 1], times: [0, 0.46, 1] }}
+              style={{ transformOrigin: "left center", transformPerspective: 1000 }}
+            >
+              {item.coverUrl ? (
+                <img alt="" className="h-full w-full object-cover" src={item.coverUrl} />
+              ) : (
+                <div
+                  className="flex h-full w-full items-end p-4 text-white"
+                  style={{ background: `linear-gradient(145deg, ${item.coverTone[0]}, ${item.coverTone[1]})` }}
+                >
+                  <span className="font-serif text-lg font-semibold leading-tight">{item.title}</span>
+                </div>
+              )}
+              {item.type === "book" ? <div className="absolute inset-y-0 left-0 w-2 bg-black/15" /> : null}
+            </motion.div>
+          </div>
+
           <motion.article
             aria-label={`${item.title} details`}
             aria-modal="true"
             className="relative grid max-h-[calc(100vh-1rem)] w-full max-w-5xl overflow-hidden rounded-[8px] border border-line bg-paper text-ink shadow-[0_32px_100px_rgba(0,0,0,0.34)] md:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.45fr)] sm:max-h-[calc(100vh-2.5rem)]"
-            initial={panelOrigin}
-            animate={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-            exit={panelOrigin}
-            transition={{ type: "spring", stiffness: 270, damping: 29, mass: 0.82 }}
+            initial={{ opacity: 0, scaleX: 0.58, scaleY: 0.9 }}
+            animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ delay: 0.31, type: "spring", stiffness: 285, damping: 30, mass: 0.78 }}
+            style={{ transformOrigin: "center center" }}
           >
             <button
               aria-label="Close details"
@@ -148,26 +180,9 @@ export function ContentDetail({
                   "relative overflow-hidden border border-black/10 bg-panel shadow-[0_22px_45px_rgba(0,0,0,0.24)]",
                   item.type === "video" ? "aspect-square w-44 rounded-[7px]" : "aspect-[2/3] w-40 rounded-[5px]",
                 )}
-                initial={{
-                  rotateY: item.type === "book" ? -18 : 0,
-                  rotate: item.type === "video" ? -3 : item.type === "game" ? 2 : 0,
-                  scale: 0.96,
-                  y: 14,
-                }}
-                animate={{ rotateY: 0, rotate: 0, scale: 1, y: 0 }}
-                exit={{
-                  rotateY: item.type === "book" ? -10 : 0,
-                  rotate: item.type === "video" ? 2 : 0,
-                  scale: 0.97,
-                }}
-                transition={{
-                  layout: { type: "spring", stiffness: 310, damping: 30 },
-                  delay: 0.04,
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 26,
-                }}
-                style={{ transformOrigin: "left center", transformPerspective: 900 }}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.43, duration: 0.22, ease: "easeOut" }}
               >
                 {item.coverUrl ? (
                   <img alt={`${item.title} cover`} className="h-full w-full object-cover" src={item.coverUrl} />
@@ -188,7 +203,7 @@ export function ContentDetail({
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 8 }}
-              transition={{ delay: 0.12, duration: 0.24, ease: "easeOut" }}
+              transition={{ delay: 0.43, duration: 0.24, ease: "easeOut" }}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                 {item.subtype ?? item.type} · {item.status.replace("_", " ")}
