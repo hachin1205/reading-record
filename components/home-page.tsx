@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Archive, BookOpen, Grid2X2, Library, Lock, Search, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   belongsOnHome,
   belongsInActiveYear,
@@ -328,6 +328,8 @@ function ShelfRow({
   onOpenDetail: (item: MediaItem) => void;
 }) {
   const arranged = reorderable ? withAuthorBookmarks(items) : items;
+  const [bookFacingOverrides, setBookFacingOverrides] = useState<Record<string, boolean>>({});
+  const suppressClickAfterDrag = useRef(false);
 
   return (
     <section>
@@ -373,11 +375,22 @@ function ShelfRow({
             ) : (
             <motion.div
               key={entry.id}
-              className="relative shrink-0 cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
+              className="group relative shrink-0 cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
-              aria-label={`Open ${entry.title}`}
+              aria-label={entry.type === "book" ? `Toggle ${entry.title}` : `Open ${entry.title}`}
               onClick={() => {
+                if (suppressClickAfterDrag.current) return;
+
+                if (entry.type === "book") {
+                  const defaultFacing = entry.favorite || entry.status === "in_progress";
+                  setBookFacingOverrides((current) => ({
+                    ...current,
+                    [entry.id]: !(current[entry.id] ?? defaultFacing),
+                  }));
+                  return;
+                }
+
                 const isCollapsedPlayableFilm =
                   entry.type === "video" &&
                   entry.themeYoutubeId &&
@@ -427,7 +440,13 @@ function ShelfRow({
                       }
                     : undefined
               }
+              onDragStart={() => {
+                suppressClickAfterDrag.current = true;
+              }}
               onDragEnd={(_, info) => {
+                window.setTimeout(() => {
+                  suppressClickAfterDrag.current = false;
+                }, 0);
                 if ((!reorderable && !stackOverlap) || !onReorder) return;
                 const index = items.findIndex((item) => item.id === entry.id);
                 if (index < 0) return;
@@ -461,8 +480,14 @@ function ShelfRow({
                 progress={entry.id === activeThemeId ? themeProgress : 0}
                 shelfIndex={visualIndex}
                 expanded={Boolean(expandedFilms?.[entry.id])}
+                bookFacing={
+                  entry.type === "book"
+                    ? (bookFacingOverrides[entry.id] ??
+                      (entry.favorite || entry.status === "in_progress"))
+                    : undefined
+                }
               />
-              {entry.type === "video" && entry.themeYoutubeId ? (
+              {entry.type === "book" || (entry.type === "video" && entry.themeYoutubeId) ? (
                 <button
                   aria-label={`Open details for ${entry.title}`}
                   className="absolute right-1 top-1 z-30 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-black/55 text-white opacity-0 shadow-sm transition hover:bg-black/75 group-hover:opacity-100 focus:opacity-100"

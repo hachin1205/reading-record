@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/lib/sample-data";
 
@@ -39,6 +40,7 @@ export function MediaObject({
   progress = 0,
   shelfIndex = 0,
   expanded = false,
+  bookFacing,
 }: {
   item: MediaItem;
   compact?: boolean;
@@ -46,8 +48,11 @@ export function MediaObject({
   progress?: number;
   shelfIndex?: number;
   expanded?: boolean;
+  bookFacing?: boolean;
 }) {
-  if (item.type === "book") return <BookObject item={item} compact={compact} />;
+  if (item.type === "book") {
+    return <BookObject item={item} compact={compact} facing={bookFacing} />;
+  }
   if (item.type === "video") {
     return (
       <DiscCase
@@ -71,33 +76,54 @@ export function MediaObject({
   return <WritingObject item={item} compact={compact} />;
 }
 
-function BookObject({ item, compact }: { item: MediaItem; compact: boolean }) {
+function BookObject({
+  item,
+  compact,
+  facing,
+}: {
+  item: MediaItem;
+  compact: boolean;
+  facing?: boolean;
+}) {
   const pageCount = item.pageCount ?? 260;
   const width = Math.max(32, Math.min(78, Math.round(pageCount / 11)));
   const height = compact ? 100 : item.favorite || item.status === "in_progress" ? 140 : 126;
-  const isFacing = item.favorite || item.status === "in_progress";
+  const isFacing = facing ?? (item.favorite || item.status === "in_progress");
 
-  if (isFacing && !compact) {
+  if (isFacing) {
+    const facingWidth = compact ? 74 : 92;
+    const facingHeight = compact ? 108 : 144;
+    const coverWidth = compact ? 70 : 88;
+    const coverHeight = compact ? 100 : 134;
+
     return (
-      <div className="group relative grid h-[144px] w-[92px] place-items-end">
-        <div className="object-shadow relative h-[134px] w-[88px] overflow-hidden rounded-[6px] border border-black/10 bg-panel transition duration-200 group-hover:-translate-y-2 group-hover:rotate-[-1deg]">
+      <motion.div
+        className="group relative grid place-items-end"
+        layout
+        style={{ width: facingWidth, height: facingHeight }}
+      >
+        <div
+          className="object-shadow relative overflow-hidden rounded-[6px] border border-black/10 bg-panel transition duration-200 group-hover:-translate-y-2 group-hover:rotate-[-1deg]"
+          style={{ width: coverWidth, height: coverHeight }}
+        >
           <CoverArt item={item} />
-        <div className="absolute inset-y-0 left-0 w-3 bg-black/16" />
-        <div className="absolute inset-y-0 right-0 w-2 bg-white/18" />
-      </div>
+          <div className="absolute inset-y-0 left-0 w-3 bg-black/16" />
+          <div className="absolute inset-y-0 right-0 w-2 bg-white/18" />
+        </div>
         <ObjectBadges item={item} />
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div
+    <motion.div
       className="group relative flex items-end"
-      style={{ width: `${width}px`, height: `${height}px` }}
+      layout
+      style={{ width: width + "px", height: height + "px" }}
     >
       <div
         className="object-shadow relative w-full overflow-hidden rounded-[5px] border border-black/10 transition duration-200 group-hover:-translate-y-2"
-        style={{ height: `${height - 8}px` }}
+        style={{ height: height - 8 + "px" }}
       >
         <CoverArt item={item} />
         <div className="absolute inset-y-0 left-0 w-[5px] bg-black/18" />
@@ -107,7 +133,7 @@ function BookObject({ item, compact }: { item: MediaItem; compact: boolean }) {
         </span>
       </div>
       <ObjectBadges item={item} />
-    </div>
+    </motion.div>
   );
 }
 
