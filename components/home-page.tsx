@@ -644,7 +644,7 @@ function MatrixView({
             onClick={() => onOpenDetail(item)}
           >
             <div
-              className="cover-fallback h-full w-full"
+              className="cover-fallback relative h-full w-full overflow-hidden"
               style={
                 {
                   "--fallback-a": item.coverTone[0],
@@ -652,6 +652,15 @@ function MatrixView({
                 } as React.CSSProperties
               }
             >
+              {item.coverUrl ? (
+                <img
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  src={item.coverUrl}
+                />
+              ) : null}
               <span className="sr-only">{item.title}</span>
             </div>
           </button>
