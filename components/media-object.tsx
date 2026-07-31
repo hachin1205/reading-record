@@ -177,9 +177,10 @@ function DiscCase({
         <div className="absolute inset-y-0 left-2 w-px bg-white/55" />
         <div className="absolute inset-x-0 top-0 h-6 bg-white/18" />
         {item.themeYoutubeId ? (
-          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-[10px] font-bold text-white shadow-sm" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
+          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-0 right-0 z-20 grid h-11 w-11 touch-manipulation place-items-center text-[10px] font-bold text-white" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
+            <span className="relative grid h-8 w-8 place-items-center rounded-full bg-black/75 shadow-sm">
             {playing ? (
-              <svg className="absolute inset-0 h-7 w-7 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
+              <svg className="absolute inset-0 h-8 w-8 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
                 <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="2" />
                 <circle
                   cx="14"
@@ -194,6 +195,7 @@ function DiscCase({
               </svg>
             ) : null}
             <span className="relative">{playing ? "Ⅱ" : "▶"}</span>
+            </span>
           </button>
         ) : null}
       </div>
@@ -219,7 +221,7 @@ function DiscSpine({ item, onPlay }: { item: MediaItem; onPlay?: () => void }) {
         {item.themeYoutubeId ? (
           <button
             aria-label={"Play " + item.title}
-            className="absolute bottom-2 left-1/2 grid h-5 w-5 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-black/35 text-[8px] text-white"
+            className="absolute bottom-1 left-1/2 z-20 grid h-8 w-8 -translate-x-1/2 touch-manipulation place-items-center rounded-full border border-white/30 bg-black/55 text-[9px] text-white"
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); onPlay?.(); }}
