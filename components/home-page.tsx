@@ -522,6 +522,7 @@ function ShelfRow({
                   className="absolute right-1 top-1 z-30 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-black/55 text-white opacity-0 shadow-sm transition hover:bg-black/75 group-hover:opacity-100 focus:opacity-100"
                   title="Open details"
                   type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => {
                     event.stopPropagation();
                     onOpenDetail(entry);
