@@ -227,6 +227,23 @@ function ShelfView({
   onToggleFilmExpand: (id: string, nextFacing?: boolean) => void;
   onOpenDetail: (item: MediaItem) => void;
 }) {
+  const [currentOrder, setCurrentOrder] = useState<string[]>(() =>
+    currentItems.map((item) => item.id),
+  );
+  const currentItemKey = currentItems.map((item) => item.id).join("|");
+  useEffect(() => {
+    setCurrentOrder((order) => {
+      const available = new Set(currentItems.map((item) => item.id));
+      const retained = order.filter((id) => available.has(id));
+      const retainedSet = new Set(retained);
+      return [...retained, ...currentItems.map((item) => item.id).filter((id) => !retainedSet.has(id))];
+    });
+  }, [currentItemKey]);
+  const orderedCurrentItems = useMemo(() => {
+    const byId = new Map(currentItems.map((item) => [item.id, item]));
+    return currentOrder.map((id) => byId.get(id)).filter(Boolean) as MediaItem[];
+  }, [currentOrder, currentItems]);
+
   const initialBooks = useMemo(
     () => shelfItems.filter((item) => item.type === "book"),
     [shelfItems],
@@ -250,8 +267,10 @@ function ShelfView({
     <section className="bookcase-frame relative mx-auto mt-1 max-w-7xl space-y-6 rounded-[12px] px-3 py-5 sm:px-4 lg:px-5">
       <ShelfRow
         title="Currently Enjoying"
-        items={currentItems}
+        items={orderedCurrentItems}
         current
+        reorderable
+        onReorder={setCurrentOrder}
         activeThemeId={activeThemeId}
         themeProgress={themeProgress}
         onPlayTheme={onPlayTheme}
@@ -339,7 +358,7 @@ function ShelfRow({
   onToggleFilmExpand?: (id: string, nextFacing?: boolean) => void;
   onOpenDetail: (item: MediaItem) => void;
 }) {
-  const arranged = reorderable ? withAuthorBookmarks(items) : items;
+  const arranged = reorderable && !current ? withAuthorBookmarks(items) : items;
   const [objectFacingOverrides, setObjectFacingOverrides] = useState<Record<string, boolean>>({});
   const suppressClickAfterDrag = useRef(false);
 
