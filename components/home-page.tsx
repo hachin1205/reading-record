@@ -15,7 +15,7 @@ import {
 } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { AuthorBookmark, MediaObject } from "./media-object";
-import { ContentDetail } from "./content-detail";
+import { ContentDetail, type DetailOrigin } from "./content-detail";
 import { ThemeToggle } from "./theme-shell";
 
 type ViewMode = "shelf" | "matrix";
@@ -27,6 +27,12 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
   const [themeProgress, setThemeProgress] = useState(0);
   const [expandedFilms, setExpandedFilms] = useState<Record<string, boolean>>({});
   const [detailItem, setDetailItem] = useState<MediaItem | null>(null);
+  const [detailOrigin, setDetailOrigin] = useState<DetailOrigin | null>(null);
+
+  function openDetail(item: MediaItem, origin: DetailOrigin) {
+    setDetailOrigin(origin);
+    setDetailItem(item);
+  }
 
   useEffect(() => {
     setItems(initialItems);
@@ -170,15 +176,27 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
               [id]: nextFacing ?? !current[id],
             }))
           }
-          onOpenDetail={setDetailItem}
+          onOpenDetail={openDetail}
         />
       ) : (
-        <MatrixView items={matrixItems} counts={counts} onOpenDetail={setDetailItem} />
+        <MatrixView items={matrixItems} counts={counts} onOpenDetail={openDetail} />
       )}
       {activeTheme ? <HiddenThemePlayer item={activeTheme} /> : null}
-      <ContentDetail item={detailItem} onClose={() => setDetailItem(null)} />
+      <ContentDetail item={detailItem} origin={detailOrigin} onClose={() => setDetailItem(null)} />
     </main>
   );
+}
+
+function getDetailOrigin(element: HTMLElement): DetailOrigin {
+  const rect = element.getBoundingClientRect();
+  return {
+    centerX: rect.left + rect.width / 2,
+    centerY: rect.top + rect.height / 2,
+    width: rect.width,
+    height: rect.height,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+  };
 }
 
 function ViewButton({
@@ -225,7 +243,7 @@ function ShelfView({
   onPlayTheme: (item: MediaItem) => void;
   expandedFilms: Record<string, boolean>;
   onToggleFilmExpand: (id: string, nextFacing?: boolean) => void;
-  onOpenDetail: (item: MediaItem) => void;
+  onOpenDetail: (item: MediaItem, origin: DetailOrigin) => void;
 }) {
   const [currentOrder, setCurrentOrder] = useState<string[]>(() =>
     currentItems.map((item) => item.id),
@@ -356,7 +374,7 @@ function ShelfRow({
   onPlayTheme?: (item: MediaItem) => void;
   expandedFilms?: Record<string, boolean>;
   onToggleFilmExpand?: (id: string, nextFacing?: boolean) => void;
-  onOpenDetail: (item: MediaItem) => void;
+  onOpenDetail: (item: MediaItem, origin: DetailOrigin) => void;
 }) {
   const arranged = reorderable && !current ? withAuthorBookmarks(items) : items;
   const [objectFacingOverrides, setObjectFacingOverrides] = useState<Record<string, boolean>>({});
@@ -424,14 +442,13 @@ function ShelfRow({
             ) : (
             <motion.div
               key={entry.id}
-              layoutId={`media-object-${entry.id}`}
               className="group relative shrink-0 origin-bottom-right cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
               aria-label={"Open details for " + entry.title}
-              onClick={() => {
+              onClick={(event) => {
                 if (suppressClickAfterDrag.current) return;
-                onOpenDetail(entry);
+                onOpenDetail(entry, getDetailOrigin(event.currentTarget));
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -600,7 +617,7 @@ function MatrixView({
 }: {
   items: MediaItem[];
   counts: ReturnType<typeof statusCounts>;
-  onOpenDetail: (item: MediaItem) => void;
+  onOpenDetail: (item: MediaItem, origin: DetailOrigin) => void;
 }) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
@@ -654,14 +671,13 @@ function MatrixView({
 
       <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20">
         {filteredItems.map((item) => (
-          <motion.button
+          <button
             key={item.id}
-            layoutId={`media-object-${item.id}`}
             aria-label={`Open ${item.title}`}
             className="group grid aspect-[2/3] place-items-center overflow-hidden rounded-[7px] border border-black/10 bg-panel shadow-sm transition hover:-translate-y-1"
             title={item.title}
             type="button"
-            onClick={() => onOpenDetail(item)}
+            onClick={(event) => onOpenDetail(item, getDetailOrigin(event.currentTarget))}
           >
             <div
               className="cover-fallback relative h-full w-full overflow-hidden"
@@ -683,7 +699,7 @@ function MatrixView({
               ) : null}
               <span className="sr-only">{item.title}</span>
             </div>
-          </motion.button>
+          </button>
         ))}
         {Array.from({ length: fillerCount }).map((_, index) => (
           <div

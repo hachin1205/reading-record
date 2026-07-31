@@ -6,11 +6,22 @@ import { useEffect, useState } from "react";
 import type { ContentExperience, ContentNote, MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+export type DetailOrigin = {
+  centerX: number;
+  centerY: number;
+  width: number;
+  height: number;
+  viewportWidth: number;
+  viewportHeight: number;
+};
+
 export function ContentDetail({
   item,
+  origin,
   onClose,
 }: {
   item: MediaItem | null;
+  origin: DetailOrigin | null;
   onClose: () => void;
 }) {
   const [notes, setNotes] = useState<ContentNote[]>([]);
@@ -83,6 +94,19 @@ export function ContentDetail({
   const earlierNotes = notes.filter(
     (note) => !note.experienceId || !linkedExperienceIds.has(note.experienceId),
   );
+  const panelWidth = origin ? Math.min(1024, origin.viewportWidth - 16) : 1024;
+  const panelHeight = origin ? Math.min(720, origin.viewportHeight - 16) : 720;
+  const originScale = origin
+    ? Math.max(0.16, Math.min(0.34, Math.max(origin.width / panelWidth, origin.height / panelHeight)))
+    : 0.97;
+  const panelOrigin = origin
+    ? {
+        x: origin.centerX - origin.viewportWidth / 2,
+        y: origin.centerY - origin.viewportHeight / 2,
+        scale: originScale,
+        opacity: 0.42,
+      }
+    : { x: 0, y: 28, scale: 0.97, opacity: 0.8 };
 
   return (
     <AnimatePresence>
@@ -100,10 +124,10 @@ export function ContentDetail({
             aria-label={`${item.title} details`}
             aria-modal="true"
             className="relative grid max-h-[calc(100vh-1rem)] w-full max-w-5xl overflow-hidden rounded-[8px] border border-line bg-paper text-ink shadow-[0_32px_100px_rgba(0,0,0,0.34)] md:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.45fr)] sm:max-h-[calc(100vh-2.5rem)]"
-            initial={{ y: 28, scale: 0.97, rotateX: -2 }}
-            animate={{ y: 0, scale: 1, rotateX: 0 }}
-            exit={{ y: 18, scale: 0.98, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 330, damping: 30 }}
+            initial={panelOrigin}
+            animate={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            exit={panelOrigin}
+            transition={{ type: "spring", stiffness: 270, damping: 29, mass: 0.82 }}
           >
             <button
               aria-label="Close details"
@@ -120,7 +144,6 @@ export function ContentDetail({
                 style={{ background: `linear-gradient(145deg, ${item.coverTone[0]}, ${item.coverTone[1]})` }}
               />
               <motion.div
-                layoutId={`media-object-${item.id}`}
                 className={cn(
                   "relative overflow-hidden border border-black/10 bg-panel shadow-[0_22px_45px_rgba(0,0,0,0.24)]",
                   item.type === "video" ? "aspect-square w-44 rounded-[7px]" : "aspect-[2/3] w-40 rounded-[5px]",
