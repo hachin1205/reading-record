@@ -242,10 +242,6 @@ function GameCase({
     <div className="group relative grid place-items-end" style={{ width, height: height + 8 }}>
       <div
         className="object-shadow relative h-full w-full overflow-hidden rounded-[7px] border border-black/10 bg-black/10 p-[6px] transition duration-200 group-hover:-translate-y-2"
-        style={{
-          transform: compact ? "rotate(-10deg)" : undefined,
-          transformOrigin: "center bottom",
-        }}
       >
         <div className={cn("absolute inset-x-0 top-0 h-4", strip)} />
         <div className="relative mt-3 h-[calc(100%-12px)] overflow-hidden rounded-[4px]">
@@ -268,10 +264,6 @@ function GameSpine({ item, compact }: { item: MediaItem; compact: boolean }) {
     >
       <div
         className="object-shadow relative h-[138px] w-[36px] overflow-hidden rounded-[6px] border border-black/10 bg-black/10 transition duration-200 group-hover:-translate-y-1"
-        style={{
-          transform: compact ? "rotate(-11deg)" : undefined,
-          transformOrigin: "center bottom",
-        }}
       >
         <div className={cn("absolute inset-y-1 left-1 w-2 rounded-sm", strip)} />
         <div className="cover-fallback absolute inset-y-[6px] left-[11px] right-[4px] rounded-[3px]" style={

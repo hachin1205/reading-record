@@ -375,7 +375,7 @@ function ShelfRow({
             ) : (
             <motion.div
               key={entry.id}
-              className="group relative shrink-0 cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
+              className="group relative shrink-0 origin-bottom-right cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
               aria-label={entry.type === "book" ? `Toggle ${entry.title}` : `Open ${entry.title}`}
@@ -440,6 +440,10 @@ function ShelfRow({
                       }
                     : undefined
               }
+              animate={{
+                rotate: current && visualIndex === arranged.length - 1 ? -8 : 0,
+                x: current && visualIndex === arranged.length - 1 ? 1 : 0,
+              }}
               onDragStart={() => {
                 suppressClickAfterDrag.current = true;
               }}
