@@ -344,6 +344,24 @@ function ShelfRow({
   const [objectFacingOverrides, setObjectFacingOverrides] = useState<Record<string, boolean>>({});
   const suppressClickAfterDrag = useRef(false);
 
+  function toggleObjectPosture(entry: MediaItem, visualIndex: number) {
+    if (entry.type === "book" || entry.type === "game") {
+      const defaultFacing = entry.type === "book"
+        ? entry.favorite || entry.status === "in_progress"
+        : visualIndex < 3 || Boolean(entry.favorite);
+      setObjectFacingOverrides((current) => ({
+        ...current,
+        [entry.id]: !(current[entry.id] ?? defaultFacing),
+      }));
+      return;
+    }
+
+    if (entry.type === "video") {
+      const facing = isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms);
+      onToggleFilmExpand?.(entry.id, !facing);
+    }
+  }
+
   return (
     <section>
       {current ? (
@@ -391,27 +409,9 @@ function ShelfRow({
               className="group relative shrink-0 origin-bottom-right cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
-              aria-label={entry.type === "writing" ? `Open ${entry.title}` : `Toggle ${entry.title}`}
+              aria-label={"Open details for " + entry.title}
               onClick={() => {
                 if (suppressClickAfterDrag.current) return;
-
-                if (entry.type === "book" || entry.type === "game") {
-                  const defaultFacing = entry.type === "book"
-                    ? entry.favorite || entry.status === "in_progress"
-                    : visualIndex < 3 || Boolean(entry.favorite);
-                  setObjectFacingOverrides((current) => ({
-                    ...current,
-                    [entry.id]: !(current[entry.id] ?? defaultFacing),
-                  }));
-                  return;
-                }
-
-                if (entry.type === "video") {
-                  const facing = isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms);
-                  onToggleFilmExpand?.(entry.id, !facing);
-                  return;
-                }
-
                 onOpenDetail(entry);
               }}
               onKeyDown={(event) => {
@@ -518,14 +518,14 @@ function ShelfRow({
               />
               {entry.type !== "writing" ? (
                 <button
-                  aria-label={`Open details for ${entry.title}`}
-                  className="absolute right-1 top-1 z-30 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-black/55 text-white opacity-0 shadow-sm transition hover:bg-black/75 group-hover:opacity-100 focus:opacity-100"
-                  title="Open details"
+                  aria-label={`Change form for ${entry.title}`}
+                  className="absolute right-1 top-1 z-30 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-black/55 text-white opacity-70 shadow-sm transition hover:bg-black/75 hover:opacity-100 focus:opacity-100"
+                  title="Change form"
                   type="button"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => {
                     event.stopPropagation();
-                    onOpenDetail(entry);
+                    toggleObjectPosture(entry, visualIndex);
                   }}
                 >
                   <BookOpen size={13} />
