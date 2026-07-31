@@ -62,7 +62,7 @@ const generatedCoverPalettes: Array<[string, string]> = [
 
 export function AdminPage() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
-  const [records, setRecords] = useState<MediaItem[]>(mediaItems);
+  const [records, setRecords] = useState<MediaItem[]>([]);
   const [notes, setNotes] = useState<ContentNote[]>([]);
   const [experiences, setExperiences] = useState<ContentExperience[]>([]);
   const [activeSection, setActiveSection] = useState<AdminSection>("writing");
@@ -154,14 +154,27 @@ export function AdminPage() {
       })
       .slice(0, 8);
   }, [query, records, selectedType]);
-  const usesExternalSearch = selectedType === "book" || selectedType === "video";
+  const usesExternalSearch =
+    selectedType === "book" || selectedType === "video" || selectedType === "game";
   const searchResults = usesExternalSearch && query.trim().length >= 2
     ? sourceResults
     : localSearchResults;
 
   useEffect(() => {
-    const endpoint = selectedType === "book" ? "books" : selectedType === "video" ? "anime" : null;
-    const sourceName = selectedType === "book" ? "NDL Search" : "AniList";
+    const endpoint =
+      selectedType === "book"
+        ? "books"
+        : selectedType === "video"
+          ? "anime"
+          : selectedType === "game"
+            ? "games"
+            : null;
+    const sourceName =
+      selectedType === "book"
+        ? "book catalogs"
+        : selectedType === "video"
+          ? "anime catalogs"
+          : "VNDB";
     if (!endpoint || query.trim().length < 2) {
       setSourceResults([]);
       setSourceError(null);
@@ -936,7 +949,15 @@ function ContentWorkspace({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={17} />
               <input
                 className="h-12 w-full rounded-md border border-line bg-panel pl-10 pr-3 text-sm outline-none focus:border-ink"
-                placeholder={selectedType === "book" ? "Japanese title, author, or ISBN" : selectedType === "video" ? "Japanese or English anime title" : "Title, creator, or source id"}
+                placeholder={
+                  selectedType === "book"
+                    ? "English or Japanese title, author, or ISBN"
+                    : selectedType === "video"
+                      ? "Japanese or English anime title"
+                      : selectedType === "game"
+                        ? "Visual novel title or VNDB id"
+                        : "Title or creator"
+                }
                 value={query}
                 onChange={(event) => onQueryChange(event.target.value)}
               />
@@ -945,27 +966,46 @@ function ContentWorkspace({
 
           {selectedType === "book" ? (
             <p className="text-xs text-muted">
-              Book metadata provided by{" "}
+              Japanese metadata comes from{" "}
+              <a className="underline underline-offset-2" href="https://books.rakuten.co.jp/" rel="noreferrer" target="_blank">
+                Rakuten Books
+              </a>
+              , with{" "}
               <a className="underline underline-offset-2" href="https://ndlsearch.ndl.go.jp/" rel="noreferrer" target="_blank">
                 NDL Search
               </a>
-              . Covers are enriched through openBD when available; otherwise you can generate a placeholder.
+              {" "}as fallback. English metadata comes from Google Books or Open Library. Missing covers can use a generated placeholder.
             </p>
           ) : null}
           {selectedType === "video" ? (
             <p className="text-xs text-muted">
               Anime metadata and cover art provided by{" "}
-              <a className="underline underline-offset-2" href="https://anilist.co/" rel="noreferrer" target="_blank">
-                AniList
+              <a className="underline underline-offset-2" href="https://jikan.moe/" rel="noreferrer" target="_blank">
+                Jikan / MyAnimeList
               </a>
-              . Other video types can still be created manually.
+              , with AniList as a fallback. Other video types can still be created manually.
+            </p>
+          ) : null}
+          {selectedType === "game" ? (
+            <p className="text-xs text-muted">
+              Visual novel metadata and cover art provided by{" "}
+              <a className="underline underline-offset-2" href="https://vndb.org/" rel="noreferrer" target="_blank">
+                VNDB
+              </a>
+              . Console and PC games can be created manually until IGDB is connected.
             </p>
           ) : null}
 
           <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto pr-1">
             {sourceLoading ? (
               <div className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
-                Searching {selectedType === "book" ? "NDL Search" : "AniList"}...
+                Searching{" "}
+                {selectedType === "book"
+                  ? "book catalogs"
+                  : selectedType === "video"
+                    ? "anime catalogs"
+                    : "VNDB"}
+                ...
               </div>
             ) : null}
             {sourceError ? (
@@ -995,7 +1035,7 @@ function ContentWorkspace({
                     </span>
                   </div>
                   <p className="mt-2 text-xs font-semibold text-muted">
-                    {[item.publisher, item.isbn, item.subtype].filter(Boolean).join(" · ") || item.status.replace("_", " ")}
+                    {[item.sourceName, item.publisher, item.isbn, item.subtype].filter(Boolean).join(" · ") || item.status.replace("_", " ")}
                   </p>
                 </div>
               </button>
@@ -1064,7 +1104,13 @@ function ContentWorkspace({
                 </label>
                 <label className="grid gap-1.5 text-sm font-semibold">
                   Status
-                  <select className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink" defaultValue={candidate.status}>
+                  <select
+                    className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink"
+                    value={candidate.status}
+                    onChange={(event) =>
+                      onCandidateChange({ ...candidate, status: event.target.value as MediaStatus })
+                    }
+                  >
                     {statusOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}

@@ -2,12 +2,135 @@ import type { MediaItem } from "@/lib/types";
 
 const NDL_ENDPOINT = "https://ndlsearch.ndl.go.jp/api/opensearch";
 const OPEN_BD_ENDPOINT = "https://api.openbd.jp/v1/get";
+const RAKUTEN_BOOKS_ENDPOINT = "https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404";
+const GOOGLE_BOOKS_ENDPOINT = "https://www.googleapis.com/books/v1/volumes";
+const OPEN_LIBRARY_ENDPOINT = "https://openlibrary.org/search.json";
 
 export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim();
   if (!query || query.length < 2) return Response.json({ data: [] });
 
   try {
+    const data = containsJapanese(query)
+      ? await searchJapaneseBooks(query)
+      : await searchEnglishBooks(query);
+    return Response.json({ data });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Book search failed";
+    return Response.json({ error: message }, { status: 502 });
+  }
+}
+
+async function searchJapaneseBooks(query: string): Promise<MediaItem[]> {
+  const applicationId = process.env.RAKUTEN_APPLICATION_ID?.trim();
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY?.trim();
+  if (applicationId && accessKey) {
+    try {
+      const results = await searchRakutenBooks(query, applicationId, accessKey);
+      if (results.length > 0) return results;
+    } catch (error) {
+      console.warn(
+        "Rakuten Books search failed; using NDL fallback:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+  }
+  return searchNdl(query);
+}
+
+type RakutenBook = {
+  title?: string;
+  author?: string;
+  publisherName?: string;
+  isbn?: string;
+  salesDate?: string;
+  itemUrl?: string;
+  largeImageUrl?: string;
+  mediumImageUrl?: string;
+  smallImageUrl?: string;
+};
+
+type RakutenBooksPayload = {
+  Items?: RakutenBook[];
+  errors?: {
+    errorCode?: number;
+    errorMessage?: string;
+  };
+};
+
+async function searchRakutenBooks(
+  query: string,
+  applicationId: string,
+  accessKey: string,
+): Promise<MediaItem[]> {
+  const normalizedIsbn = query.replace(/[^0-9Xx]/g, "");
+  const baseParams = {
+    applicationId,
+    formatVersion: "2",
+    hits: "12",
+    outOfStockFlag: "1",
+  };
+  let payload: RakutenBooksPayload;
+  if (normalizedIsbn.length === 10 || normalizedIsbn.length === 13) {
+    payload = await fetchRakutenBooks(
+      new URLSearchParams({ ...baseParams, isbn: normalizedIsbn }),
+      accessKey,
+    );
+  } else {
+    payload = await fetchRakutenBooks(
+      new URLSearchParams({ ...baseParams, title: query }),
+      accessKey,
+    );
+    if (!payload.Items?.length) {
+      payload = await fetchRakutenBooks(
+        new URLSearchParams({ ...baseParams, author: query }),
+        accessKey,
+      );
+    }
+  }
+
+  const now = new Date().toISOString();
+  const seen = new Set<string>();
+  return (payload.Items ?? [])
+    .filter((book) => book.title)
+    .filter((book) => {
+      const key = book.isbn || book.itemUrl || `${book.title}-${book.author}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 8)
+    .map((book, index) => ({
+      id: `rakuten-${stableId(book.isbn || book.itemUrl || `${book.title}-${index}`)}`,
+      type: "book",
+      title: book.title!,
+      creator: normalizeCreator(book.author),
+      status: "planned",
+      publishedAt: normalizeJapaneseDate(book.salesDate),
+      updatedAt: now,
+      coverUrl: book.largeImageUrl || book.mediumImageUrl || book.smallImageUrl,
+      isbn: book.isbn,
+      publisher: book.publisherName,
+      sourceUrl: book.itemUrl,
+      sourceName: "Rakuten Books",
+      coverTone: ["#8b3f35", "#d9c9ad"],
+    }));
+}
+
+async function fetchRakutenBooks(params: URLSearchParams, accessKey: string) {
+  const response = await fetch(`${RAKUTEN_BOOKS_ENDPOINT}?${params.toString()}`, {
+    headers: { accessKey },
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10_000),
+  });
+  const payload = (await response.json().catch(() => ({}))) as RakutenBooksPayload;
+  if (!response.ok) {
+    throw new Error(payload.errors?.errorMessage || `Rakuten Books returned ${response.status}`);
+  }
+  return payload;
+}
+
+async function searchNdl(query: string): Promise<MediaItem[]> {
     const params = new URLSearchParams({ cnt: "100", dpid: "iss-ndl-opac" });
     const normalizedIsbn = query.replace(/[^0-9Xx]/g, "");
     if (normalizedIsbn.length === 10 || normalizedIsbn.length === 13) {
@@ -41,12 +164,148 @@ export async function GET(request: Request) {
       sourceName: "NDL Search",
       coverTone: ["#7b5f42", "#d8c8aa"],
     }));
+    return data;
+}
 
-    return Response.json({ data });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Book search failed";
-    return Response.json({ error: message }, { status: 502 });
+async function searchEnglishBooks(query: string): Promise<MediaItem[]> {
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY?.trim();
+  if (apiKey) {
+    try {
+      return await searchGoogleBooks(query, apiKey);
+    } catch (error) {
+      console.warn(
+        "Google Books search failed; using Open Library fallback:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+      // Open Library keeps English search usable if Google Books is unavailable.
+    }
   }
+  return searchOpenLibrary(query);
+}
+
+type GoogleVolume = {
+  id: string;
+  volumeInfo?: {
+    title?: string;
+    authors?: string[];
+    publisher?: string;
+    publishedDate?: string;
+    pageCount?: number;
+    industryIdentifiers?: Array<{ identifier?: string }>;
+    imageLinks?: {
+      smallThumbnail?: string;
+      thumbnail?: string;
+      small?: string;
+      medium?: string;
+      large?: string;
+      extraLarge?: string;
+    };
+    infoLink?: string;
+  };
+};
+
+async function searchGoogleBooks(query: string, apiKey: string): Promise<MediaItem[]> {
+  const normalizedIsbn = query.replace(/[^0-9Xx]/g, "");
+  const searchTerm = normalizedIsbn.length === 10 || normalizedIsbn.length === 13
+    ? `isbn:${normalizedIsbn}`
+    : query;
+  const params = new URLSearchParams({
+    q: searchTerm,
+    printType: "books",
+    langRestrict: "en",
+    orderBy: "relevance",
+    maxResults: "12",
+    projection: "lite",
+    key: apiKey,
+  });
+  const response = await fetch(`${GOOGLE_BOOKS_ENDPOINT}?${params.toString()}`, {
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error(`Google Books returned ${response.status}`);
+
+  const payload = (await response.json()) as { items?: GoogleVolume[] };
+  const now = new Date().toISOString();
+  return (payload.items ?? [])
+    .filter((volume) => volume.volumeInfo?.title)
+    .slice(0, 8)
+    .map((volume) => {
+      const info = volume.volumeInfo!;
+      const isbn = preferredIsbn(info.industryIdentifiers?.map((entry) => entry.identifier ?? "") ?? []);
+      const coverUrl = info.imageLinks?.extraLarge
+        || info.imageLinks?.large
+        || info.imageLinks?.medium
+        || info.imageLinks?.small
+        || info.imageLinks?.thumbnail
+        || info.imageLinks?.smallThumbnail;
+      return {
+        id: `google-${volume.id}`,
+        type: "book" as const,
+        title: info.title!,
+        creator: info.authors?.join(", ") || "Unknown creator",
+        status: "planned" as const,
+        publishedAt: normalizeDate(info.publishedDate),
+        updatedAt: now,
+        pageCount: info.pageCount,
+        coverUrl: coverUrl?.replace(/^http:/, "https:"),
+        isbn,
+        publisher: info.publisher,
+        sourceUrl: info.infoLink,
+        sourceName: "Google Books",
+        coverTone: ["#31536f", "#d6c7a8"] as [string, string],
+      };
+    });
+}
+
+type OpenLibraryRecord = {
+  key?: string;
+  title?: string;
+  author_name?: string[];
+  first_publish_year?: number;
+  isbn?: string[];
+  cover_i?: number;
+  publisher?: string[];
+};
+
+async function searchOpenLibrary(query: string): Promise<MediaItem[]> {
+  const normalizedIsbn = query.replace(/[^0-9Xx]/g, "");
+  const params = new URLSearchParams({
+    limit: "12",
+    lang: "en",
+    fields: "key,title,author_name,first_publish_year,isbn,cover_i,publisher",
+  });
+  if (normalizedIsbn.length === 10 || normalizedIsbn.length === 13) {
+    params.set("isbn", normalizedIsbn);
+  } else {
+    params.set("title", query);
+  }
+  const response = await fetch(`${OPEN_LIBRARY_ENDPOINT}?${params.toString()}`, {
+    headers: { "user-agent": "ReadingRecord/0.1 (personal media library)" },
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error(`Open Library returned ${response.status}`);
+
+  const payload = (await response.json()) as { docs?: OpenLibraryRecord[] };
+  const now = new Date().toISOString();
+  return (payload.docs ?? [])
+    .filter((record) => record.title)
+    .slice(0, 8)
+    .map((record, index) => ({
+      id: `openlibrary-${stableId(record.key || `${record.title}-${index}`)}`,
+      type: "book",
+      title: record.title!,
+      creator: record.author_name?.join(", ") || "Unknown creator",
+      status: "planned",
+      publishedAt: record.first_publish_year ? normalizeDate(String(record.first_publish_year)) : undefined,
+      updatedAt: now,
+      coverUrl: record.cover_i ? `https://covers.openlibrary.org/b/id/${record.cover_i}-L.jpg` : undefined,
+      isbn: preferredIsbn(record.isbn ?? []),
+      publisher: record.publisher?.[0],
+      sourceUrl: record.key ? `https://openlibrary.org${record.key}` : undefined,
+      sourceName: "Open Library",
+      coverTone: ["#31536f", "#d6c7a8"],
+    }));
 }
 
 type NdlRecord = {
@@ -104,6 +363,31 @@ function scoreRecord(record: NdlRecord, normalizedQuery: string) {
 
 function normalizeSearchText(value: string) {
   return value.normalize("NFKC").replace(/[\s　:：・\-―—]/g, "").toLowerCase();
+}
+
+function containsJapanese(value: string) {
+  return /[\u3040-\u30ff\u3400-\u9fff]/u.test(value);
+}
+
+function normalizeCreator(value?: string) {
+  if (!value?.trim()) return "Unknown creator";
+  const trimmed = value.trim();
+  return containsJapanese(trimmed) ? trimmed.replace(/\s+/g, "") : trimmed;
+}
+
+function normalizeJapaneseDate(value?: string) {
+  if (!value) return undefined;
+  const match = value.match(/(\d{4})年(?:\s*(\d{1,2})月)?(?:\s*(\d{1,2})日)?/);
+  if (!match) return normalizeDate(value);
+  const month = String(match[2] || 1).padStart(2, "0");
+  const day = String(match[3] || 1).padStart(2, "0");
+  return new Date(`${match[1]}-${month}-${day}T00:00:00.000Z`).toISOString();
+}
+
+function preferredIsbn(values: string[]) {
+  const normalized = values.map((value) => value.replace(/[^0-9Xx]/g, ""));
+  return normalized.find((value) => value.length === 13)
+    ?? normalized.find((value) => value.length === 10);
 }
 
 function readElements(xml: string, tag: string) {

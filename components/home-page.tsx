@@ -21,11 +21,45 @@ import { ThemeToggle } from "./theme-shell";
 type ViewMode = "shelf" | "matrix";
 
 export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaItem[] }) {
+  const [items, setItems] = useState(initialItems);
   const [viewMode, setViewMode] = useState<ViewMode>("shelf");
   const [activeTheme, setActiveTheme] = useState<MediaItem | null>(null);
   const [themeProgress, setThemeProgress] = useState(0);
   const [expandedFilms, setExpandedFilms] = useState<Record<string, boolean>>({});
   const [detailItem, setDetailItem] = useState<MediaItem | null>(null);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
+
+  useEffect(() => {
+    const refreshLibrary = async () => {
+      try {
+        const response = await fetch("/api/media", { cache: "no-store" });
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as { data?: MediaItem[] };
+        if (Array.isArray(payload.data)) {
+          setItems(payload.data);
+        }
+      } catch {
+        // Keep the last rendered shelf available during a temporary connection failure.
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshLibrary();
+      }
+    };
+
+    window.addEventListener("pageshow", refreshLibrary);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("pageshow", refreshLibrary);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeTheme?.themeYoutubeId) {
@@ -54,12 +88,12 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
   }, [activeTheme]);
 
   const shelfHomeItems = useMemo(
-    () => initialItems.filter(belongsOnHome).sort(sortHomeItems),
-    [initialItems],
+    () => items.filter(belongsOnHome).sort(sortHomeItems),
+    [items],
   );
   const matrixItems = useMemo(
-    () => initialItems.filter(belongsInActiveYear).sort(sortHomeItems),
-    [initialItems],
+    () => items.filter(belongsInActiveYear).sort(sortHomeItems),
+    [items],
   );
   const currentItems = shelfHomeItems.filter(isCurrent);
   const currentIds = new Set(currentItems.map((item) => item.id));

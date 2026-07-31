@@ -8,9 +8,9 @@ export async function getMediaForPage(): Promise<MediaItem[]> {
 
   try {
     const items = await listMedia();
-    return items.length ? items : mediaItems;
+    return items;
   } catch (error) {
     console.error("Unable to load media from Supabase", error);
-    return mediaItems;
+    return process.env.SEED_SAMPLE_DATA === "true" ? mediaItems : [];
   }
 }
