@@ -177,7 +177,7 @@ function DiscCase({
         <div className="absolute inset-y-0 left-2 w-px bg-white/55" />
         <div className="absolute inset-x-0 top-0 h-6 bg-white/18" />
         {item.themeYoutubeId ? (
-          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-0 right-0 z-20 grid h-11 w-11 touch-manipulation place-items-center text-[10px] font-bold text-white" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
+          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-0 left-0 z-20 grid h-11 w-11 touch-manipulation place-items-center text-[10px] font-bold text-white" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
             <span className="relative grid h-8 w-8 place-items-center rounded-full bg-black/75 shadow-sm">
             {playing ? (
               <svg className="absolute inset-0 h-8 w-8 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
