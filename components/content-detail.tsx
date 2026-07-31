@@ -120,14 +120,31 @@ export function ContentDetail({
                 style={{ background: `linear-gradient(145deg, ${item.coverTone[0]}, ${item.coverTone[1]})` }}
               />
               <motion.div
+                layoutId={`media-object-${item.id}`}
                 className={cn(
                   "relative overflow-hidden border border-black/10 bg-panel shadow-[0_22px_45px_rgba(0,0,0,0.24)]",
                   item.type === "video" ? "aspect-square w-44 rounded-[7px]" : "aspect-[2/3] w-40 rounded-[5px]",
                 )}
-                initial={{ rotateY: item.type === "book" ? -14 : 0, y: 12 }}
-                animate={{ rotateY: 0, y: 0 }}
-                transition={{ delay: 0.08, type: "spring", stiffness: 260, damping: 26 }}
-                style={{ transformOrigin: "left center" }}
+                initial={{
+                  rotateY: item.type === "book" ? -18 : 0,
+                  rotate: item.type === "video" ? -3 : item.type === "game" ? 2 : 0,
+                  scale: 0.96,
+                  y: 14,
+                }}
+                animate={{ rotateY: 0, rotate: 0, scale: 1, y: 0 }}
+                exit={{
+                  rotateY: item.type === "book" ? -10 : 0,
+                  rotate: item.type === "video" ? 2 : 0,
+                  scale: 0.97,
+                }}
+                transition={{
+                  layout: { type: "spring", stiffness: 310, damping: 30 },
+                  delay: 0.04,
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 26,
+                }}
+                style={{ transformOrigin: "left center", transformPerspective: 900 }}
               >
                 {item.coverUrl ? (
                   <img alt={`${item.title} cover`} className="h-full w-full object-cover" src={item.coverUrl} />
@@ -143,7 +160,13 @@ export function ContentDetail({
               </motion.div>
             </div>
 
-            <div className="min-h-0 overflow-y-auto p-5 sm:p-7 md:p-9">
+            <motion.div
+              className="min-h-0 overflow-y-auto p-5 sm:p-7 md:p-9"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              transition={{ delay: 0.12, duration: 0.24, ease: "easeOut" }}
+            >
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                 {item.subtype ?? item.type} · {item.status.replace("_", " ")}
               </p>
@@ -215,7 +238,7 @@ export function ContentDetail({
                   ) : null}
                 </div>
               </section>
-            </div>
+            </motion.div>
           </motion.article>
         </motion.div>
       ) : null}

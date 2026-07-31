@@ -424,6 +424,7 @@ function ShelfRow({
             ) : (
             <motion.div
               key={entry.id}
+              layoutId={`media-object-${entry.id}`}
               className="group relative shrink-0 origin-bottom-right cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
@@ -653,8 +654,9 @@ function MatrixView({
 
       <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20">
         {filteredItems.map((item) => (
-          <button
+          <motion.button
             key={item.id}
+            layoutId={`media-object-${item.id}`}
             aria-label={`Open ${item.title}`}
             className="group grid aspect-[2/3] place-items-center overflow-hidden rounded-[7px] border border-black/10 bg-panel shadow-sm transition hover:-translate-y-1"
             title={item.title}
@@ -681,7 +683,7 @@ function MatrixView({
               ) : null}
               <span className="sr-only">{item.title}</span>
             </div>
-          </button>
+          </motion.button>
         ))}
         {Array.from({ length: fillerCount }).map((_, index) => (
           <div
