@@ -435,10 +435,15 @@ function ShelfRow({
                   ? { marginLeft: visualIndex > 0 ? -6 : 0, zIndex: visualIndex }
                   : softOverlap
                     ? {
-                        marginLeft:
-                          visualIndex > 0 && !isVideoSpine(entry, visualIndex, activeThemeId, expandedFilms)
-                            ? -24
-                            : 0,
+                        marginLeft: shouldOverlapVideos(
+                          entry,
+                          arranged[visualIndex - 1],
+                          visualIndex,
+                          activeThemeId,
+                          expandedFilms,
+                        )
+                          ? -24
+                          : 0,
                         zIndex: visualIndex,
                       }
                     : undefined
@@ -681,6 +686,20 @@ function MatrixView({
           : "Older records live in Archive by year."}
       </p>
     </section>
+  );
+}
+
+function shouldOverlapVideos(
+  entry: MediaItem,
+  previous: MediaItem | { bookmark: true; label: string; index: number } | undefined,
+  visualIndex: number,
+  activeThemeId?: string,
+  expandedFilms?: Record<string, boolean>,
+) {
+  if (visualIndex === 0 || !previous || "bookmark" in previous) return false;
+  return (
+    !isVideoSpine(entry, visualIndex, activeThemeId, expandedFilms) &&
+    !isVideoSpine(previous, visualIndex - 1, activeThemeId, expandedFilms)
   );
 }
 
