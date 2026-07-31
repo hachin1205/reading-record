@@ -158,7 +158,6 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
           onPlayTheme={(item) => {
             setActiveTheme((current) => {
               if (current?.id === item.id) {
-                setExpandedFilms((expanded) => ({ ...expanded, [item.id]: false }));
                 return null;
               }
               return item;
