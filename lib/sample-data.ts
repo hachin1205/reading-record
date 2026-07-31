@@ -441,16 +441,17 @@ for (let index = 0; index < 42; index += 1) {
 
 export const activeYear = 2026;
 
+function belongsToActiveYear(item: MediaItem) {
+  const shelfDate = item.finishedAt ?? item.updatedAt;
+  return new Date(shelfDate).getFullYear() === activeYear;
+}
+
 export function belongsOnHome(item: MediaItem) {
-  const date = item.finishedAt ?? item.publishedAt;
-  const inActiveYear = date ? new Date(date).getFullYear() === activeYear : false;
-  return item.status === "in_progress" || item.featured || item.favorite || inActiveYear;
+  return item.status === "in_progress" || item.featured || item.favorite || belongsToActiveYear(item);
 }
 
 export function belongsInActiveYear(item: MediaItem) {
-  const date = item.finishedAt ?? item.publishedAt;
-  const inActiveYear = date ? new Date(date).getFullYear() === activeYear : false;
-  return item.status === "in_progress" || item.featured || inActiveYear;
+  return item.status === "in_progress" || item.featured || belongsToActiveYear(item);
 }
 
 export function isCurrent(item: MediaItem) {
