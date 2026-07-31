@@ -41,6 +41,9 @@ export function MediaObject({
   shelfIndex = 0,
   expanded = false,
   bookFacing,
+  videoFacing,
+  gameFacing,
+  onPlay,
 }: {
   item: MediaItem;
   compact?: boolean;
@@ -49,6 +52,9 @@ export function MediaObject({
   shelfIndex?: number;
   expanded?: boolean;
   bookFacing?: boolean;
+  videoFacing?: boolean;
+  gameFacing?: boolean;
+  onPlay?: () => void;
 }) {
   if (item.type === "book") {
     return <BookObject item={item} compact={compact} facing={bookFacing} />;
@@ -60,7 +66,8 @@ export function MediaObject({
         compact={compact}
         playing={playing}
         progress={progress}
-        spine={shelfIndex >= 3 && !item.favorite && !playing && !expanded}
+        spine={!playing && (videoFacing === undefined ? shelfIndex >= 3 && !item.favorite && !expanded : !videoFacing)}
+        onPlay={onPlay}
       />
     );
   }
@@ -69,7 +76,7 @@ export function MediaObject({
       <GameCase
         item={item}
         compact={compact}
-        spine={shelfIndex >= 3 && !item.favorite}
+        spine={gameFacing === undefined ? shelfIndex >= 3 && !item.favorite : !gameFacing}
       />
     );
   }
@@ -143,14 +150,16 @@ function DiscCase({
   playing,
   progress,
   spine,
+  onPlay,
 }: {
   item: MediaItem;
   compact: boolean;
   playing: boolean;
   progress: number;
   spine: boolean;
+  onPlay?: () => void;
 }) {
-  if (spine) return <DiscSpine item={item} />;
+  if (spine) return <DiscSpine item={item} onPlay={onPlay} />;
 
   const size = compact ? 92 : item.favorite ? 128 : 118;
   return (
@@ -168,7 +177,7 @@ function DiscCase({
         <div className="absolute inset-y-0 left-2 w-px bg-white/55" />
         <div className="absolute inset-x-0 top-0 h-6 bg-white/18" />
         {item.themeYoutubeId ? (
-          <div className="absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-[10px] font-bold text-white shadow-sm">
+          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-[10px] font-bold text-white shadow-sm" type="button" onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
             {playing ? (
               <svg className="absolute inset-0 h-7 w-7 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
                 <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="2" />
@@ -185,7 +194,7 @@ function DiscCase({
               </svg>
             ) : null}
             <span className="relative">{playing ? "Ⅱ" : "▶"}</span>
-          </div>
+          </button>
         ) : null}
       </div>
       <ObjectBadges item={item} />
@@ -193,7 +202,7 @@ function DiscCase({
   );
 }
 
-function DiscSpine({ item }: { item: MediaItem }) {
+function DiscSpine({ item, onPlay }: { item: MediaItem; onPlay?: () => void }) {
   return (
     <div className="group relative flex h-[118px] w-[34px] items-end">
       <div className="object-shadow relative h-[112px] w-full overflow-hidden rounded-[5px] border border-white/40 bg-white/22 p-[4px] backdrop-blur transition duration-200 group-hover:-translate-y-1">
@@ -208,9 +217,14 @@ function DiscSpine({ item }: { item: MediaItem }) {
         />
         <div className="absolute inset-y-0 left-1 w-px bg-white/50" />
         {item.themeYoutubeId ? (
-          <div className="absolute bottom-2 left-1/2 grid h-5 w-5 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-black/35 text-[8px] text-white">
+          <button
+            aria-label={"Play " + item.title}
+            className="absolute bottom-2 left-1/2 grid h-5 w-5 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-black/35 text-[8px] text-white"
+            type="button"
+            onClick={(event) => { event.stopPropagation(); onPlay?.(); }}
+          >
             ▶
-          </div>
+          </button>
         ) : (
           <div className="absolute bottom-2 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full border border-white/30 bg-white/10" />
         )}

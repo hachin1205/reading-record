@@ -165,8 +165,11 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
             });
           }}
           expandedFilms={expandedFilms}
-          onToggleFilmExpand={(id) =>
-            setExpandedFilms((current) => ({ ...current, [id]: !current[id] }))
+          onToggleFilmExpand={(id, nextFacing) =>
+            setExpandedFilms((current) => ({
+              ...current,
+              [id]: nextFacing ?? !current[id],
+            }))
           }
           onOpenDetail={setDetailItem}
         />
@@ -222,7 +225,7 @@ function ShelfView({
   themeProgress: number;
   onPlayTheme: (item: MediaItem) => void;
   expandedFilms: Record<string, boolean>;
-  onToggleFilmExpand: (id: string) => void;
+  onToggleFilmExpand: (id: string, nextFacing?: boolean) => void;
   onOpenDetail: (item: MediaItem) => void;
 }) {
   const initialBooks = useMemo(
@@ -246,7 +249,17 @@ function ShelfView({
 
   return (
     <section className="bookcase-frame relative mx-auto mt-1 max-w-7xl space-y-6 rounded-[12px] px-3 py-5 sm:px-4 lg:px-5">
-      <ShelfRow title="Currently Enjoying" items={currentItems} current activeThemeId={activeThemeId} themeProgress={themeProgress} onPlayTheme={onPlayTheme} onOpenDetail={onOpenDetail} />
+      <ShelfRow
+        title="Currently Enjoying"
+        items={currentItems}
+        current
+        activeThemeId={activeThemeId}
+        themeProgress={themeProgress}
+        onPlayTheme={onPlayTheme}
+        expandedFilms={expandedFilms}
+        onToggleFilmExpand={onToggleFilmExpand}
+        onOpenDetail={onOpenDetail}
+      />
       <ShelfRow
         title="Books"
         items={books}
@@ -324,11 +337,11 @@ function ShelfRow({
   softOverlap?: boolean;
   onPlayTheme?: (item: MediaItem) => void;
   expandedFilms?: Record<string, boolean>;
-  onToggleFilmExpand?: (id: string) => void;
+  onToggleFilmExpand?: (id: string, nextFacing?: boolean) => void;
   onOpenDetail: (item: MediaItem) => void;
 }) {
   const arranged = reorderable ? withAuthorBookmarks(items) : items;
-  const [bookFacingOverrides, setBookFacingOverrides] = useState<Record<string, boolean>>({});
+  const [objectFacingOverrides, setObjectFacingOverrides] = useState<Record<string, boolean>>({});
   const suppressClickAfterDrag = useRef(false);
 
   return (
@@ -378,34 +391,24 @@ function ShelfRow({
               className="group relative shrink-0 origin-bottom-right cursor-grab touch-none border-0 bg-transparent p-0 text-left active:cursor-grabbing"
               role="button"
               tabIndex={0}
-              aria-label={entry.type === "book" ? `Toggle ${entry.title}` : `Open ${entry.title}`}
+              aria-label={entry.type === "writing" ? `Open ${entry.title}` : `Toggle ${entry.title}`}
               onClick={() => {
                 if (suppressClickAfterDrag.current) return;
 
-                if (entry.type === "book") {
-                  const defaultFacing = entry.favorite || entry.status === "in_progress";
-                  setBookFacingOverrides((current) => ({
+                if (entry.type === "book" || entry.type === "game") {
+                  const defaultFacing = entry.type === "book"
+                    ? entry.favorite || entry.status === "in_progress"
+                    : visualIndex < 3 || Boolean(entry.favorite);
+                  setObjectFacingOverrides((current) => ({
                     ...current,
                     [entry.id]: !(current[entry.id] ?? defaultFacing),
                   }));
                   return;
                 }
 
-                const isCollapsedPlayableFilm =
-                  entry.type === "video" &&
-                  entry.themeYoutubeId &&
-                  visualIndex >= 3 &&
-                  !entry.favorite &&
-                  !expandedFilms?.[entry.id] &&
-                  activeThemeId !== entry.id;
-
-                if (isCollapsedPlayableFilm) {
-                  onToggleFilmExpand?.(entry.id);
-                  return;
-                }
-
-                if (entry.type === "video" && entry.themeYoutubeId && (activeThemeId === entry.id || expandedFilms?.[entry.id])) {
-                  onPlayTheme?.(entry);
+                if (entry.type === "video") {
+                  const facing = isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms);
+                  onToggleFilmExpand?.(entry.id, !facing);
                   return;
                 }
 
@@ -475,6 +478,7 @@ function ShelfRow({
                       zIndex: 40,
                     }
               }
+              layout
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
             >
               <MediaObject
@@ -486,12 +490,33 @@ function ShelfRow({
                 expanded={Boolean(expandedFilms?.[entry.id])}
                 bookFacing={
                   entry.type === "book"
-                    ? (bookFacingOverrides[entry.id] ??
+                    ? (objectFacingOverrides[entry.id] ??
                       (entry.favorite || entry.status === "in_progress"))
                     : undefined
                 }
+                videoFacing={
+                  entry.type === "video"
+                    ? isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms)
+                    : undefined
+                }
+                gameFacing={
+                  entry.type === "game"
+                    ? (objectFacingOverrides[entry.id] ??
+                      (visualIndex < 3 || Boolean(entry.favorite)))
+                    : undefined
+                }
+                onPlay={
+                  entry.type === "video" && entry.themeYoutubeId
+                    ? () => {
+                        if (!isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms)) {
+                          onToggleFilmExpand?.(entry.id, true);
+                        }
+                        onPlayTheme?.(entry);
+                      }
+                    : undefined
+                }
               />
-              {entry.type === "book" || (entry.type === "video" && entry.themeYoutubeId) ? (
+              {entry.type !== "writing" ? (
                 <button
                   aria-label={`Open details for ${entry.title}`}
                   className="absolute right-1 top-1 z-30 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-black/55 text-white opacity-0 shadow-sm transition hover:bg-black/75 group-hover:opacity-100 focus:opacity-100"
@@ -658,19 +683,27 @@ function MatrixView({
   );
 }
 
+function isVideoFacing(
+  entry: MediaItem,
+  visualIndex: number,
+  activeThemeId?: string,
+  expandedFilms?: Record<string, boolean>,
+) {
+  if (entry.type !== "video") return false;
+  if (entry.id === activeThemeId) return true;
+  if (expandedFilms && Object.prototype.hasOwnProperty.call(expandedFilms, entry.id)) {
+    return expandedFilms[entry.id];
+  }
+  return visualIndex < 3 || Boolean(entry.favorite);
+}
+
 function isVideoSpine(
   entry: MediaItem,
   visualIndex: number,
   activeThemeId?: string,
   expandedFilms?: Record<string, boolean>,
 ) {
-  return (
-    entry.type === "video" &&
-    visualIndex >= 3 &&
-    !entry.favorite &&
-    entry.id !== activeThemeId &&
-    !expandedFilms?.[entry.id]
-  );
+  return entry.type === "video" && !isVideoFacing(entry, visualIndex, activeThemeId, expandedFilms);
 }
 
 function sortHomeItems(a: MediaItem, b: MediaItem) {
