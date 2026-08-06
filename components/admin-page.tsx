@@ -20,7 +20,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { mediaItems, type MediaItem, type MediaStatus, type MediaType } from "@/lib/sample-data";
+import {
+  type GamePlatformFamily,
+  type MediaItem,
+  type MediaStatus,
+  type MediaType,
+} from "@/lib/sample-data";
 import type {
   ContentExperience,
   ContentNote,
@@ -47,6 +52,13 @@ const statusOptions: Array<{ value: MediaStatus; label: string }> = [
   { value: "finished", label: "Finished" },
   { value: "planned", label: "Planned" },
   { value: "dropped", label: "Dropped" },
+];
+
+const platformOptions: Array<{ value: GamePlatformFamily; label: string }> = [
+  { value: "playstation", label: "PlayStation" },
+  { value: "nintendo", label: "Nintendo" },
+  { value: "xbox", label: "Xbox" },
+  { value: "pc", label: "PC" },
 ];
 
 const libraryPageSize = 8;
@@ -174,7 +186,7 @@ export function AdminPage() {
         ? "book catalogs"
         : selectedType === "video"
           ? "anime catalogs"
-          : "VNDB";
+          : "SteamGridDB and VNDB";
     if (!endpoint || query.trim().length < 2) {
       setSourceResults([]);
       setSourceError(null);
@@ -955,7 +967,7 @@ function ContentWorkspace({
                     : selectedType === "video"
                       ? "Japanese or English anime title"
                       : selectedType === "game"
-                        ? "Visual novel title or VNDB id"
+                        ? "Game title or VNDB id"
                         : "Title or creator"
                 }
                 value={query}
@@ -988,11 +1000,15 @@ function ContentWorkspace({
           ) : null}
           {selectedType === "game" ? (
             <p className="text-xs text-muted">
-              Visual novel metadata and cover art provided by{" "}
+              Game artwork provided by{" "}
+              <a className="underline underline-offset-2" href="https://www.steamgriddb.com/" rel="noreferrer" target="_blank">
+                SteamGridDB
+              </a>
+              , with visual novel metadata from{" "}
               <a className="underline underline-offset-2" href="https://vndb.org/" rel="noreferrer" target="_blank">
                 VNDB
               </a>
-              . Console and PC games can be created manually until IGDB is connected.
+              . Confirm the platform and developer before adding a game.
             </p>
           ) : null}
 
@@ -1004,7 +1020,7 @@ function ContentWorkspace({
                   ? "book catalogs"
                   : selectedType === "video"
                     ? "anime catalogs"
-                    : "VNDB"}
+                    : "SteamGridDB and VNDB"}
                 ...
               </div>
             ) : null}
@@ -1096,11 +1112,19 @@ function ContentWorkspace({
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1.5 text-sm font-semibold sm:col-span-2">
                   Title
-                  <input className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink" value={candidate.title} readOnly />
+                  <input
+                    className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink"
+                    value={candidate.title}
+                    onChange={(event) => onCandidateChange({ ...candidate, title: event.target.value })}
+                  />
                 </label>
                 <label className="grid gap-1.5 text-sm font-semibold">
                   Creator
-                  <input className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink" value={candidate.creator} readOnly />
+                  <input
+                    className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink"
+                    value={candidate.creator}
+                    onChange={(event) => onCandidateChange({ ...candidate, creator: event.target.value })}
+                  />
                 </label>
                 <label className="grid gap-1.5 text-sm font-semibold">
                   Status
@@ -1118,6 +1142,23 @@ function ContentWorkspace({
                     ))}
                   </select>
                 </label>
+                {candidate.type === "game" ? (
+                  <label className="grid gap-1.5 text-sm font-semibold">
+                    Platform
+                    <select
+                      className="h-10 rounded-md border border-line bg-panel px-3 text-sm outline-none focus:border-ink"
+                      value={candidate.platformFamily ?? "pc"}
+                      onChange={(event) => onCandidateChange({
+                        ...candidate,
+                        platformFamily: event.target.value as GamePlatformFamily,
+                      })}
+                    >
+                      {platformOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -1130,14 +1171,14 @@ function ContentWorkspace({
             <button
               className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line bg-panel px-4 text-sm font-semibold transition hover:-translate-y-0.5"
               type="button"
-              onClick={() => onCandidateChange(null)}
+              onClick={() => onCandidateChange(createBlankMediaItem(selectedType))}
             >
               <Plus size={16} />
               Create blank
             </button>
             <button
               className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-semibold text-paper transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45"
-              disabled={saving || !candidate}
+              disabled={saving || !candidate?.title.trim() || !candidate.creator.trim()}
               type="button"
               onClick={onAddCandidate}
             >
@@ -1149,6 +1190,19 @@ function ContentWorkspace({
       </div>
     </div>
   );
+}
+
+function createBlankMediaItem(type: MediaType): MediaItem {
+  return {
+    id: `draft-${crypto.randomUUID()}`,
+    type,
+    title: "",
+    creator: "",
+    status: "planned",
+    updatedAt: new Date().toISOString(),
+    coverTone: generatedCoverPalettes[0],
+    platformFamily: type === "game" ? "pc" : undefined,
+  };
 }
 
 function generateCover(item: MediaItem): MediaItem {
@@ -1402,6 +1456,7 @@ function LibraryEditor({
   const [rating, setRating] = useState("");
   const [favorite, setFavorite] = useState(false);
   const [featured, setFeatured] = useState(false);
+  const [platformFamily, setPlatformFamily] = useState<GamePlatformFamily>("pc");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -1411,6 +1466,7 @@ function LibraryEditor({
     setRating(item?.rating === undefined ? "" : String(item.rating));
     setFavorite(Boolean(item?.favorite));
     setFeatured(Boolean(item?.featured));
+    setPlatformFamily(item?.platformFamily ?? "pc");
   }, [item]);
 
   async function save() {
@@ -1423,6 +1479,7 @@ function LibraryEditor({
       rating: rating.trim() ? Number(rating) : undefined,
       favorite,
       featured,
+      platformFamily: item.type === "game" ? platformFamily : undefined,
     });
     setSaving(false);
   }
@@ -1456,6 +1513,21 @@ function LibraryEditor({
               <p className="truncate">{item.id}</p>
             </div>
           </div>
+
+          {item.type === "game" ? (
+            <label className="grid gap-1.5 text-sm font-semibold">
+              Platform
+              <select
+                className="h-10 rounded-md border border-line bg-paper px-3 text-sm outline-none focus:border-ink"
+                value={platformFamily}
+                onChange={(event) => setPlatformFamily(event.target.value as GamePlatformFamily)}
+              >
+                {platformOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <label className="grid gap-1.5 text-sm font-semibold">
             Title
@@ -1603,8 +1675,11 @@ function AdminThumb({ item, small = false }: { item: MediaItem; small?: boolean 
         )}
         style={style}
       >
-        <div className={cn("absolute inset-x-0 top-0 h-2", strip)} />
-        <div className="absolute inset-y-0 left-1 w-1 rounded-sm bg-white/18" />
+        {item.coverUrl ? (
+          <img alt="" className="absolute inset-0 h-full w-full object-cover" src={item.coverUrl} />
+        ) : null}
+        <div className={cn("absolute inset-x-0 top-0 z-10 h-2", strip)} />
+        <div className="absolute inset-y-0 left-1 z-10 w-1 rounded-sm bg-white/18" />
       </div>
     );
   }
