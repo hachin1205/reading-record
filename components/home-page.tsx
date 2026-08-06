@@ -14,7 +14,7 @@ import {
   type MediaItem,
 } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
-import { AuthorBookmark, MediaObject } from "./media-object";
+import { AuthorBookmark, MediaObject, YearShelfTag } from "./media-object";
 import { ContentDetail, type DetailOrigin } from "./content-detail";
 import { ThemeToggle } from "./theme-shell";
 
@@ -101,9 +101,18 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
     () => items.filter(belongsInActiveYear).sort(sortHomeItems),
     [items],
   );
-  const currentItems = shelfHomeItems.filter(isCurrent);
-  const currentIds = new Set(currentItems.map((item) => item.id));
-  const shelfItems = shelfHomeItems.filter((item) => !currentIds.has(item.id));
+  const currentItems = useMemo(
+    () => shelfHomeItems.filter(isCurrent),
+    [shelfHomeItems],
+  );
+  const shelfItems = useMemo(() => {
+    const currentIds = new Set(currentItems.map((item) => item.id));
+    const shelfHomeIds = new Set(shelfHomeItems.map((item) => item.id));
+    return items
+      .filter((item) => !currentIds.has(item.id))
+      .filter((item) => item.type === "book" || shelfHomeIds.has(item.id))
+      .sort(sortHomeItems);
+  }, [currentItems, items, shelfHomeItems]);
   const counts = statusCounts(matrixItems);
 
   return (
@@ -256,14 +265,14 @@ function ShelfView({
       const retainedSet = new Set(retained);
       return [...retained, ...currentItems.map((item) => item.id).filter((id) => !retainedSet.has(id))];
     });
-  }, [currentItemKey]);
+  }, [currentItemKey, currentItems]);
   const orderedCurrentItems = useMemo(() => {
     const byId = new Map(currentItems.map((item) => [item.id, item]));
     return currentOrder.map((id) => byId.get(id)).filter(Boolean) as MediaItem[];
   }, [currentOrder, currentItems]);
 
   const initialBooks = useMemo(
-    () => shelfItems.filter((item) => item.type === "book"),
+    () => shelfItems.filter((item) => item.type === "book").sort(sortBooksForShelf),
     [shelfItems],
   );
   const [bookOrder, setBookOrder] = useState<string[]>(() => initialBooks.map((item) => item.id));
@@ -272,9 +281,22 @@ function ShelfView({
     [shelfItems],
   );
   const [gameOrder, setGameOrder] = useState<string[]>(() => initialGames.map((item) => item.id));
+  const bookItemKey = initialBooks.map((item) => item.id).join("|");
+  useEffect(() => {
+    setBookOrder((order) => reconcileOrder(order, initialBooks));
+  }, [bookItemKey, initialBooks]);
+  const gameItemKey = initialGames.map((item) => item.id).join("|");
+  useEffect(() => {
+    setGameOrder((order) => reconcileOrder(order, initialGames));
+  }, [gameItemKey, initialGames]);
   const books = useMemo(() => {
-    const byId = new Map(initialBooks.map((item) => [item.id, item]));
-    return bookOrder.map((id) => byId.get(id)).filter(Boolean) as MediaItem[];
+    const orderIndex = new Map(bookOrder.map((id, index) => [id, index]));
+    return [...initialBooks].sort((a, b) => {
+      const yearDifference = bookShelfYearNumber(b) - bookShelfYearNumber(a);
+      if (yearDifference !== 0) return yearDifference;
+      return (orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+    });
   }, [bookOrder, initialBooks]);
   const games = useMemo(() => {
     const byId = new Map(initialGames.map((item) => [item.id, item]));
@@ -300,6 +322,7 @@ function ShelfView({
         title="Books"
         items={books}
         reorderable
+        yearGrouped
         onReorder={setBookOrder}
         activeThemeId={activeThemeId}
         themeProgress={themeProgress}
@@ -350,6 +373,7 @@ function ShelfRow({
   items,
   current = false,
   reorderable = false,
+  yearGrouped = false,
   onReorder,
   dense = false,
   activeThemeId,
@@ -365,6 +389,7 @@ function ShelfRow({
   items: MediaItem[];
   current?: boolean;
   reorderable?: boolean;
+  yearGrouped?: boolean;
   onReorder?: (ids: string[]) => void;
   dense?: boolean;
   activeThemeId?: string;
@@ -376,7 +401,9 @@ function ShelfRow({
   onToggleFilmExpand?: (id: string, nextFacing?: boolean) => void;
   onOpenDetail: (item: MediaItem, origin: DetailOrigin) => void;
 }) {
-  const arranged = reorderable && !current ? withAuthorBookmarks(items) : items;
+  const arranged = reorderable && !current
+    ? yearGrouped ? withBookShelfMarkers(items) : withAuthorBookmarks(items)
+    : items;
   const [objectFacingOverrides, setObjectFacingOverrides] = useState<Record<string, boolean>>({});
   const suppressClickAfterDrag = useRef(false);
 
@@ -437,7 +464,9 @@ function ShelfRow({
           )}
         >
           {arranged.map((entry, visualIndex) =>
-            "bookmark" in entry ? (
+            "yearTag" in entry ? (
+              <YearShelfTag key={`year-${entry.label}-${entry.index}`} label={entry.label} />
+            ) : "bookmark" in entry ? (
               <AuthorBookmark key={`bookmark-${entry.label}-${entry.index}`} label={entry.label} />
             ) : (
             <motion.div
@@ -503,6 +532,7 @@ function ShelfRow({
                 if (!direction) return;
                 const nextIndex = Math.max(0, Math.min(items.length - 1, index + direction));
                 if (nextIndex === index) return;
+                if (yearGrouped && bookShelfYear(items[nextIndex]) !== bookShelfYear(entry)) return;
                 const next = [...items];
                 const [moved] = next.splice(index, 1);
                 next.splice(nextIndex, 0, moved);
@@ -736,12 +766,12 @@ function MatrixView({
 
 function shouldOverlapVideos(
   entry: MediaItem,
-  previous: MediaItem | { bookmark: true; label: string; index: number } | undefined,
+  previous: ShelfEntry | undefined,
   visualIndex: number,
   activeThemeId?: string,
   expandedFilms?: Record<string, boolean>,
 ) {
-  if (visualIndex === 0 || !previous || "bookmark" in previous) return false;
+  if (visualIndex === 0 || !previous || "bookmark" in previous || "yearTag" in previous) return false;
   return (
     !isVideoSpine(entry, visualIndex, activeThemeId, expandedFilms) &&
     !isVideoSpine(previous, visualIndex - 1, activeThemeId, expandedFilms)
@@ -779,6 +809,63 @@ function sortHomeItems(a: MediaItem, b: MediaItem) {
   const bFavorite = b.favorite ? 1 : 0;
   if (aFavorite !== bFavorite) return bFavorite - aFavorite;
   return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+}
+
+function sortBooksForShelf(a: MediaItem, b: MediaItem) {
+  const yearDifference = bookShelfYearNumber(b) - bookShelfYearNumber(a);
+  if (yearDifference !== 0) return yearDifference;
+  const aCreator = a.creatorSortLabel ?? a.creatorGroup ?? a.creator;
+  const bCreator = b.creatorSortLabel ?? b.creatorGroup ?? b.creator;
+  return aCreator.localeCompare(bCreator, undefined, { sensitivity: "base" });
+}
+
+function bookShelfYear(item: MediaItem) {
+  const year = bookShelfYearNumber(item);
+  return year > 0 ? String(year) : "Undated";
+}
+
+function bookShelfYearNumber(item: MediaItem) {
+  const value = item.finishedAt ?? item.updatedAt;
+  const year = new Date(value).getFullYear();
+  return Number.isFinite(year) ? year : 0;
+}
+
+function reconcileOrder(order: string[], items: MediaItem[]) {
+  const available = new Set(items.map((item) => item.id));
+  const retained = order.filter((id) => available.has(id));
+  const retainedSet = new Set(retained);
+  return [...retained, ...items.map((item) => item.id).filter((id) => !retainedSet.has(id))];
+}
+
+type ShelfEntry =
+  | MediaItem
+  | { bookmark: true; label: string; index: number }
+  | { yearTag: true; label: string; index: number };
+
+function withBookShelfMarkers(items: MediaItem[]): ShelfEntry[] {
+  const output: ShelfEntry[] = [];
+  let previousYear = "";
+  let lastBookmarkAt = -8;
+
+  items.forEach((item, index) => {
+    const year = bookShelfYear(item);
+    if (year !== previousYear) {
+      output.push({ yearTag: true, label: year, index });
+      previousYear = year;
+      lastBookmarkAt = index - 8;
+    }
+
+    const nextLabel = item.creatorSortLabel ?? (item.creatorGroup ?? item.creator).slice(0, 1);
+    const shouldPlaceBookmark =
+      index > 0 && index - lastBookmarkAt >= 5 && (item.favorite || index % 7 === 0);
+    if (shouldPlaceBookmark) {
+      lastBookmarkAt = index;
+      output.push({ bookmark: true, label: nextLabel, index });
+    }
+    output.push(item);
+  });
+
+  return output;
 }
 
 function withAuthorBookmarks(items: MediaItem[]) {

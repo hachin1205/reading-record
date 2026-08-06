@@ -362,3 +362,16 @@ export function AuthorBookmark({ label }: { label: string }) {
     </div>
   );
 }
+
+export function YearShelfTag({ label }: { label: string }) {
+  const digits = /^\d{4}$/.test(label) ? label.split("") : ["N", "/", "D"];
+
+  return (
+    <div className="relative flex h-[150px] w-7 shrink-0 items-end justify-center pb-2" aria-label={label}>
+      <div className="absolute bottom-2 top-1 left-1/2 w-px -translate-x-1/2 bg-[#b9a98d]/65" />
+      <div className="relative flex w-5 flex-col items-center rounded-[3px] border border-[#d8ceb8] bg-[#fffaf0] py-1.5 font-serif text-[9px] font-bold leading-[11px] text-[#4c3620] shadow-[0_1px_2px_rgba(0,0,0,0.14),inset_0_1px_rgba(255,255,255,0.9)]">
+        {digits.map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
+      </div>
+    </div>
+  );
+}
