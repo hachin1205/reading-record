@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Check, Ellipsis } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/lib/sample-data";
 
@@ -341,6 +342,18 @@ function hashString(value: string) {
 function ObjectBadges({ item }: { item: MediaItem }) {
   return (
     <>
+      {item.type === "book" && (item.status === "in_progress" || item.status === "finished") ? (
+        <span
+          aria-label={item.status === "in_progress" ? "In progress" : "Finished"}
+          className={cn(
+            "absolute bottom-1 left-1 z-20 grid h-4 w-4 place-items-center rounded-full border border-white/35 text-white shadow-sm",
+            item.status === "in_progress" ? "bg-[#2f7181]" : "bg-[#315d45]",
+          )}
+          title={item.status === "in_progress" ? "In progress" : "Finished"}
+        >
+          {item.status === "in_progress" ? <Ellipsis size={10} strokeWidth={2.5} /> : <Check size={10} strokeWidth={2.5} />}
+        </span>
+      ) : null}
       {item.favorite ? (
         <span className="absolute -right-1 top-2 h-5 w-3 rounded-b-full bg-[#d5a640] shadow-sm" />
       ) : null}
