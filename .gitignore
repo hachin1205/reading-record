@@ -11,3 +11,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .DS_Store
+
+# personal export files used by scripts/import-*.mjs
+imports/
+tsconfig.tsbuildinfo

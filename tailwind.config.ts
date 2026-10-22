@@ -19,6 +19,7 @@ const config: Config = {
         line: "rgb(var(--line) / <alpha-value>)",
         shelf: "rgb(var(--shelf) / <alpha-value>)",
         panel: "rgb(var(--panel) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
       },
     },
   },

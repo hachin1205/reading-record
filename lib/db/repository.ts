@@ -17,6 +17,8 @@ type DatabaseMedia = {
   updated_at: string;
   page_count: number | null;
   progress_percent: number | null;
+  target_finish_at?: string | null;
+  progress_set_at?: string | null;
   completion_count: number | null;
   favorite: boolean;
   featured: boolean;
@@ -75,6 +77,8 @@ function fromDatabaseMedia(row: DatabaseMedia): MediaItem {
     updatedAt: row.updated_at,
     pageCount: row.page_count,
     progressPercent: row.progress_percent,
+    targetFinishAt: row.target_finish_at ?? undefined,
+    progressSetAt: row.progress_set_at ?? undefined,
     completionCount: row.completion_count,
     favorite: row.favorite,
     featured: row.featured,
@@ -109,6 +113,8 @@ function toDatabaseMedia(item: Partial<MediaItem>) {
     ...(item.updatedAt !== undefined ? { updated_at: item.updatedAt } : {}),
     ...(item.pageCount !== undefined ? { page_count: item.pageCount } : {}),
     ...(item.progressPercent !== undefined ? { progress_percent: item.progressPercent } : {}),
+    ...(item.targetFinishAt !== undefined ? { target_finish_at: item.targetFinishAt } : {}),
+    ...(item.progressSetAt !== undefined ? { progress_set_at: item.progressSetAt } : {}),
     ...(item.completionCount !== undefined ? { completion_count: item.completionCount } : {}),
     ...(item.favorite !== undefined ? { favorite: item.favorite } : {}),
     ...(item.featured !== undefined ? { featured: item.featured } : {}),
@@ -217,6 +223,27 @@ export async function createNote(note: ContentNote): Promise<ContentNote> {
   });
   await updateMedia(note.contentId, { updatedAt: note.updatedAt });
   return fromDatabaseNote(created);
+}
+
+export async function updateNote(
+  id: string,
+  changes: Partial<Pick<ContentNote, "kind" | "title" | "body">>,
+): Promise<ContentNote | null> {
+  const now = new Date().toISOString();
+  const rows = await supabaseRequest<DatabaseNote[]>(`notes?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: {
+      ...(changes.kind !== undefined ? { kind: changes.kind } : {}),
+      ...(changes.title !== undefined ? { title: changes.title } : {}),
+      ...(changes.body !== undefined ? { body: changes.body } : {}),
+      updated_at: now,
+    },
+    prefer: "return=representation",
+  });
+  if (!rows[0]) return null;
+  const note = fromDatabaseNote(rows[0]);
+  await updateMedia(note.contentId, { updatedAt: now });
+  return note;
 }
 
 export async function listExperiences(contentId?: string): Promise<ContentExperience[]> {

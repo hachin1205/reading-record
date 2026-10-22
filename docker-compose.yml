@@ -1,0 +1,21 @@
+# Run:  docker compose up -d --build      (from this folder)
+# Needs a .env file here containing TUNNEL_TOKEN=... (the Cloudflare tunnel for kiyoguan.cc)
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      # production overrides for values in .env.local
+      SEED_SAMPLE_DATA: "false"
+      ADMIN_AUTH_DISABLED: "false"
+    # Not published to the internet directly — only via the Cloudflare tunnel.
+    # Local preview: http://web.reading-record.orb.local:3000
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - web

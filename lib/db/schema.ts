@@ -41,6 +41,8 @@ export const media = pgTable("media", {
     .defaultNow(),
   pageCount: integer("page_count"),
   progressPercent: integer("progress_percent"),
+  targetFinishAt: timestamp("target_finish_at", { withTimezone: true, mode: "string" }),
+  progressSetAt: timestamp("progress_set_at", { withTimezone: true, mode: "string" }),
   completionCount: integer("completion_count"),
   favorite: boolean("favorite").notNull().default(false),
   featured: boolean("featured").notNull().default(false),

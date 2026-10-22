@@ -3,27 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --paper: 244 239 228;
-  --panel: 252 249 241;
-  --ink: 35 33 29;
-  --muted: 104 97 86;
-  --line: 217 207 189;
-  --shelf: 190 166 130;
-  --shelf-back: 234 224 205;
-  --shadow: 58 45 28;
+  --font-serif: "Newsreader", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
+  --font-sans: "Inter", "Hiragino Sans", "Yu Gothic", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --paper: 251 250 247;
+  --panel: 255 255 255;
+  --ink: 28 27 25;
+  --muted: 115 111 104;
+  --line: 228 225 218;
+  --accent: 166 60 44;
+  --shelf: 184 179 170;
+  --shelf-back: 240 238 233;
+  --shadow: 40 38 34;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --paper: 20 20 18;
-  --panel: 29 29 26;
-  --ink: 241 236 225;
-  --muted: 166 157 141;
-  --line: 69 64 56;
-  --shelf: 92 76 55;
-  --shelf-back: 38 35 30;
+  --paper: 22 22 21;
+  --panel: 30 30 28;
+  --ink: 234 231 224;
+  --muted: 150 146 138;
+  --line: 54 53 50;
+  --accent: 226 129 108;
+  --shelf: 82 80 75;
+  --shelf-back: 33 33 31;
   --shadow: 0 0 0;
   color-scheme: dark;
 }
@@ -39,11 +41,15 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.38), transparent 28rem),
-    rgb(var(--paper));
+  background: rgb(var(--paper));
   color: rgb(var(--ink));
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.18);
 }
 
 button,
@@ -53,7 +59,7 @@ input {
 
 .shelf-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--muted), 0.35) transparent;
+  scrollbar-color: rgb(var(--muted) / 0.35) transparent;
 }
 
 .shelf-scroll::-webkit-scrollbar {
@@ -61,65 +67,28 @@ input {
 }
 
 .shelf-scroll::-webkit-scrollbar-thumb {
-  background: rgba(var(--muted), 0.28);
+  background: rgb(var(--muted) / 0.28);
   border-radius: 999px;
 }
 
+/* Flat (2D) shelf: solid colour fields and hairlines, no light or shadow. */
 .object-shadow {
-  box-shadow:
-    0 16px 28px rgba(var(--shadow), 0.16),
-    0 2px 3px rgba(var(--shadow), 0.16);
+  box-shadow: 0 0 0 1px rgb(var(--ink) / 0.14);
 }
 
 .shelf-rail {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 32%, rgba(0, 0, 0, 0.08) 100%),
-    linear-gradient(90deg, rgba(var(--shelf), 0.7), rgba(var(--shelf), 0.95), rgba(var(--shelf), 0.68));
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.24),
-    inset 0 -8px 12px rgba(0, 0, 0, 0.08),
-    0 18px 28px rgba(var(--shadow), 0.16);
+  background: rgb(var(--shelf));
+  border-top: 1px solid rgb(var(--ink) / 0.12);
 }
 
 .bookcase-frame {
   overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(var(--shelf), 0.38) 0 10px, transparent 10px),
-    linear-gradient(90deg, rgba(var(--shadow), 0.07), transparent 4.5rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 16rem),
-    rgba(var(--shelf), 0.18);
-  box-shadow:
-    inset 0 0 0 1px rgba(var(--line), 0.9),
-    inset 14px 0 14px rgba(255, 255, 255, 0.05),
-    inset 22px 0 24px rgba(var(--shadow), 0.04),
-    inset -22px 0 26px rgba(var(--shadow), 0.08),
-    0 30px 70px rgba(var(--shadow), 0.14);
-}
-
-.bookcase-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  z-index: 5;
-  width: 10px;
-  border-right: 1px solid rgba(var(--shadow), 0.08);
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 48%, rgba(0, 0, 0, 0.06)),
-    rgba(var(--shelf), 0.48);
-  box-shadow:
-    inset -3px 0 6px rgba(var(--shadow), 0.06),
-    6px 0 16px rgba(var(--shadow), 0.035);
-  pointer-events: none;
+  background: rgb(var(--shelf) / 0.22);
+  border: 1px solid rgb(var(--line));
 }
 
 .shelf-bay {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 38%, rgba(var(--shadow), 0.04)),
-    linear-gradient(180deg, rgba(var(--shelf-back), 0.96), rgba(var(--shelf-back), 0.82));
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.2),
-    inset 0 -16px 22px rgba(var(--shadow), 0.08),
-    0 18px 34px rgba(var(--shadow), 0.12);
+  background: rgb(var(--shelf-back));
 }
 
 .cover-fallback {
@@ -137,4 +106,353 @@ input {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Shelf items are dragged as objects: stop the browser's own image/text dragging
+   from hijacking the gesture (it cancels the pointer and swallows the flip). */
+.shelf-scroll img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.shelf-scroll {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---------- Pixel shelf style (toggle above the shelf) ---------- */
+.pixel-shelf {
+  --px: rgb(var(--ink));
+  font-family: "DotGothic16", ui-monospace, monospace;
+  border: 3px solid var(--px) !important;
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0 rgb(var(--ink) / 0.85);
+  background: rgb(var(--shelf) / 0.3);
+}
+
+.pixel-shelf *,
+.pixel-shelf *::before,
+.pixel-shelf *::after {
+  border-radius: 0 !important;
+}
+
+.pixel-shelf .font-serif,
+.pixel-shelf h2,
+.pixel-shelf span,
+.pixel-shelf p {
+  font-family: "DotGothic16", ui-monospace, monospace !important;
+  letter-spacing: 0.02em;
+}
+
+.pixel-shelf .shelf-bay {
+  border: 2px solid var(--px) !important;
+  background: rgb(var(--shelf-back));
+}
+
+.pixel-shelf .shelf-rail {
+  background: rgb(var(--shelf));
+  border-top: 3px solid var(--px);
+  box-shadow: inset 0 -6px 0 rgb(var(--ink) / 0.18);
+}
+
+.pixel-shelf .object-shadow {
+  box-shadow: 0 0 0 2px var(--px), 3px 3px 0 2px rgb(var(--ink) / 0.35);
+}
+
+
+/* Spines become flat colour blocks (no soft wash). */
+.pixel-shelf [data-spine-wash] {
+  display: none;
+}
+
+/* Hover lift snaps in steps instead of easing. */
+.pixel-shelf .group-hover\:-translate-y-2,
+.pixel-shelf .group-hover\:-translate-y-1 {
+  transition-timing-function: steps(3, end) !important;
+}
+
+/* ---------- Pixel style: blocky wooden bookcase (original pixel-plank texture) ---------- */
+.pixel-shelf {
+  background-color: #b8945c !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%23b8945c'/><rect y='3' width='16' height='1' fill='%237d5f34'/><rect y='7' width='16' height='1' fill='%237d5f34'/><rect y='11' width='16' height='1' fill='%237d5f34'/><rect y='15' width='16' height='1' fill='%237d5f34'/><rect x='5' y='0' width='1' height='3' fill='%237d5f34'/><rect x='12' y='4' width='1' height='3' fill='%237d5f34'/><rect x='2' y='8' width='1' height='3' fill='%237d5f34'/><rect x='9' y='12' width='1' height='3' fill='%237d5f34'/><rect x='10' y='2' width='3' height='1' fill='%23a5824d'/><rect x='2' y='10' width='1' height='1' fill='%23c9a56c'/><rect x='1' y='10' width='2' height='1' fill='%23a5824d'/><rect x='2' y='8' width='3' height='1' fill='%23a5824d'/><rect x='7' y='1' width='3' height='1' fill='%23a5824d'/><rect x='3' y='4' width='1' height='1' fill='%23c9a56c'/><rect x='1' y='4' width='1' height='1' fill='%23a5824d'/><rect x='9' y='8' width='2' height='1' fill='%23a5824d'/><rect x='9' y='10' width='2' height='1' fill='%23a5824d'/><rect x='6' y='6' width='1' height='1' fill='%23a5824d'/><rect x='1' y='12' width='2' height='1' fill='%23c9a56c'/><rect x='13' y='6' width='3' height='1' fill='%23c9a56c'/><rect x='11' y='5' width='2' height='1' fill='%23a5824d'/><rect x='7' y='1' width='2' height='1' fill='%23c9a56c'/><rect x='10' y='14' width='3' height='1' fill='%23c9a56c'/><rect x='2' y='1' width='3' height='1' fill='%23a5824d'/><rect x='10' y='2' width='3' height='1' fill='%23c9a56c'/><rect x='1' y='13' width='1' height='1' fill='%23c9a56c'/></svg>") !important;
+  background-size: 64px 64px !important;
+  image-rendering: pixelated;
+  border: 4px solid #3b2a14 !important;
+  box-shadow: 6px 6px 0 #3b2a14;
+}
+
+.pixel-shelf .shelf-bay {
+  background-color: #7a5a35 !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%237a5a35'/><rect y='3' width='16' height='1' fill='%234f3a20'/><rect y='7' width='16' height='1' fill='%234f3a20'/><rect y='11' width='16' height='1' fill='%234f3a20'/><rect y='15' width='16' height='1' fill='%234f3a20'/><rect x='5' y='0' width='1' height='3' fill='%234f3a20'/><rect x='12' y='4' width='1' height='3' fill='%234f3a20'/><rect x='2' y='8' width='1' height='3' fill='%234f3a20'/><rect x='9' y='12' width='1' height='3' fill='%234f3a20'/><rect x='10' y='14' width='2' height='1' fill='%238a683f'/><rect x='14' y='1' width='1' height='1' fill='%238a683f'/><rect x='15' y='14' width='1' height='1' fill='%236c4f2e'/><rect x='9' y='13' width='3' height='1' fill='%238a683f'/><rect x='12' y='13' width='2' height='1' fill='%236c4f2e'/><rect x='14' y='6' width='2' height='1' fill='%236c4f2e'/><rect x='15' y='0' width='2' height='1' fill='%238a683f'/><rect x='4' y='14' width='2' height='1' fill='%238a683f'/><rect x='12' y='9' width='1' height='1' fill='%236c4f2e'/><rect x='14' y='8' width='2' height='1' fill='%236c4f2e'/><rect x='13' y='10' width='2' height='1' fill='%238a683f'/><rect x='11' y='13' width='3' height='1' fill='%236c4f2e'/><rect x='4' y='1' width='2' height='1' fill='%236c4f2e'/><rect x='7' y='13' width='2' height='1' fill='%236c4f2e'/><rect x='15' y='12' width='2' height='1' fill='%238a683f'/><rect x='9' y='0' width='2' height='1' fill='%238a683f'/><rect x='11' y='12' width='2' height='1' fill='%236c4f2e'/><rect x='1' y='9' width='3' height='1' fill='%238a683f'/></svg>") !important;
+  background-size: 64px 64px !important;
+  border: 4px solid #3b2a14 !important;
+  box-shadow: inset 0 6px 0 rgb(0 0 0 / 0.28);
+}
+
+.pixel-shelf .shelf-rail {
+  background-color: #a9844f !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%23a9844f'/><rect y='3' width='16' height='1' fill='%236e522b'/><rect y='7' width='16' height='1' fill='%236e522b'/><rect y='11' width='16' height='1' fill='%236e522b'/><rect y='15' width='16' height='1' fill='%236e522b'/><rect x='5' y='0' width='1' height='3' fill='%236e522b'/><rect x='12' y='4' width='1' height='3' fill='%236e522b'/><rect x='2' y='8' width='1' height='3' fill='%236e522b'/><rect x='9' y='12' width='1' height='3' fill='%236e522b'/><rect x='12' y='8' width='1' height='1' fill='%23bd9862'/><rect x='12' y='0' width='2' height='1' fill='%23987443'/><rect x='6' y='9' width='2' height='1' fill='%23987443'/><rect x='10' y='12' width='1' height='1' fill='%23987443'/><rect x='0' y='12' width='2' height='1' fill='%23987443'/><rect x='11' y='12' width='1' height='1' fill='%23987443'/><rect x='6' y='12' width='3' height='1' fill='%23987443'/><rect x='8' y='6' width='2' height='1' fill='%23bd9862'/><rect x='3' y='1' width='3' height='1' fill='%23bd9862'/><rect x='15' y='9' width='2' height='1' fill='%23987443'/><rect x='4' y='1' width='2' height='1' fill='%23bd9862'/><rect x='15' y='14' width='2' height='1' fill='%23987443'/><rect x='6' y='10' width='2' height='1' fill='%23987443'/><rect x='0' y='10' width='2' height='1' fill='%23987443'/><rect x='8' y='10' width='2' height='1' fill='%23987443'/><rect x='11' y='4' width='2' height='1' fill='%23987443'/><rect x='6' y='4' width='3' height='1' fill='%23987443'/><rect x='6' y='10' width='3' height='1' fill='%23bd9862'/></svg>") !important;
+  background-size: 64px 64px !important;
+  border-top: 4px solid #3b2a14 !important;
+  box-shadow: none !important;
+}
+
+/* the strip under the top of each bay becomes a solid beam */
+.pixel-shelf .shelf-bay > div:first-child {
+  background: #5e4425 !important;
+  border-bottom: 2px solid #3b2a14;
+}
+
+/* headings sit on wood: chunky white text with a hard pixel drop-shadow */
+.pixel-shelf h2 {
+  color: #fff8e6 !important;
+  text-shadow: 3px 3px 0 #3b2a14;
+}
+.pixel-shelf h2 + p {
+  color: #fff1cf !important;
+  text-shadow: 2px 2px 0 #3b2a14;
+}
+
+/* shelf name tags and year tags: pixel signs */
+.pixel-shelf .shelf-bay .bg-panel {
+  background: #e9d6a6 !important;
+  border: 3px solid #3b2a14 !important;
+  box-shadow: 3px 3px 0 rgb(0 0 0 / 0.35);
+  transform: none !important;
+}
+.pixel-shelf .shelf-bay .bg-panel span,
+.pixel-shelf .shelf-bay .bg-panel {
+  color: #3b2a14 !important;
+}
+
+/* objects: thick dark outline, hard shadow */
+.pixel-shelf .object-shadow {
+  box-shadow: 0 0 0 2px #2a1d0c, 4px 4px 0 2px rgb(0 0 0 / 0.35) !important;
+}
+
+/* ---- note reading ---- */
+.note-body {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.75;
+  color: rgb(var(--ink) / 0.88);
+}
+.note-body-cjk {
+  font-size: 15.5px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  text-align: justify;
+}
+.note-body-cjk:lang(zh), .cjk-font:lang(zh) {
+  font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+.note-body-cjk:lang(ja), .cjk-font:lang(ja) {
+  font-family: "Inter", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+}
+.note-body > * + * { margin-top: 0.9em; }
+.note-body h5 {
+  margin-top: 1.8em;
+  font-size: 1.05em;
+  font-weight: 600;
+  color: rgb(var(--ink));
+  letter-spacing: 0.01em;
+}
+.note-body h5:first-child { margin-top: 0; }
+.note-body ul, .note-body ol { padding-left: 1.3em; }
+.note-body ul { list-style: disc; }
+.note-body ol { list-style: decimal; }
+.note-body li + li { margin-top: 0.35em; }
+.note-body li::marker { color: rgb(var(--muted)); }
+.note-body blockquote {
+  border-left: 2px solid rgb(var(--accent));
+  padding-left: 1em;
+  color: rgb(var(--muted));
+}
+
+/* ---- default cover (no picture) ---- */
+.default-cover {
+  container-type: inline-size;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f4efe4;
+  color: #2b2722;
+  text-align: left;
+}
+.default-cover-band {
+  position: relative;
+  flex: 0 0 60%;
+  display: flex;
+  align-items: flex-end;
+  padding: 9cqw 9cqw 8cqw;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 45%),
+    linear-gradient(170deg, var(--cover-a), color-mix(in srgb, var(--cover-a) 70%, var(--cover-b)));
+  color: #fffaf0;
+}
+/* thin second-colour rule between band and paper, like a printed series cover */
+.default-cover-band::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: max(1px, 2.2cqw);
+  background: var(--cover-b);
+  opacity: 0.9;
+}
+.default-cover-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-size: 11.5cqw;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+.default-cover-initial {
+  display: none;
+  font-family: var(--font-serif);
+  font-size: 46cqw;
+  line-height: 1;
+}
+.default-cover-paper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2cqw;
+  padding: 7cqw 9cqw 8cqw;
+}
+.default-cover-creator {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 7.5cqw;
+  line-height: 1.25;
+  color: #4a443c;
+}
+.default-cover-mark {
+  font-family: var(--font-sans);
+  font-size: 5cqw;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--cover-a) 75%, #6b645a);
+}
+/* Writing: a manuscript page — paper with a margin rule, title in ink. */
+.default-cover-writing { background: #f7f2e7; }
+.default-cover-writing .default-cover-band {
+  flex-basis: 64%;
+  background:
+    linear-gradient(90deg, transparent 7cqw, color-mix(in srgb, var(--cover-a) 45%, transparent) 7cqw, color-mix(in srgb, var(--cover-a) 45%, transparent) calc(7cqw + 1px), transparent calc(7cqw + 1px)),
+    repeating-linear-gradient(180deg, transparent 0 9cqw, rgba(60, 50, 35, 0.08) 9cqw calc(9cqw + 1px)),
+    #f7f2e7;
+  color: #2b2722;
+  padding-left: 13cqw;
+}
+.default-cover-writing .default-cover-band::after { background: var(--cover-a); height: max(1px, 1.2cqw); }
+.default-cover-writing .default-cover-paper { padding-left: 13cqw; }
+/* Thumbnails: too small for words — show the first character in the band instead. */
+@container (max-width: 72px) {
+  .default-cover-band { flex-basis: 100%; align-items: center; justify-content: center; padding: 0; }
+  .default-cover-band::after { display: none; }
+  .default-cover-title, .default-cover-paper { display: none; }
+  .default-cover-initial { display: block; }
+  .default-cover-writing .default-cover-band { padding-left: 0; }
+}
+
+/* ---- pixel header (shelf in pixel mode) ---- */
+html[data-shelf-style="pixel"] .site-header,
+html[data-shelf-style="pixel"] .site-header .font-serif {
+  font-family: "DotGothic16", var(--font-sans);
+  letter-spacing: 0.02em;
+}
+html[data-shelf-style="pixel"] .site-header h1 {
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.25;
+  text-shadow: 3px 3px 0 rgb(var(--ink) / 0.12);
+}
+html[data-shelf-style="pixel"] .site-header h1 em {
+  font-style: normal;
+  background: rgb(var(--accent));
+  color: rgb(var(--paper));
+  padding: 0 0.18em;
+  box-shadow: 3px 3px 0 rgb(var(--ink) / 0.85);
+}
+html[data-shelf-style="pixel"] .site-header nav button,
+html[data-shelf-style="pixel"] .site-header nav a {
+  border-radius: 0 !important;
+}
+html[data-shelf-style="pixel"] .site-header nav button[aria-pressed="true"] {
+  text-decoration: none;
+  box-shadow: inset 0 -3px 0 rgb(var(--accent));
+}
+
+/* ---- pixel mode: the header block is a green pixel-brick wall ---- */
+html[data-shelf-style="pixel"] .site-header {
+  margin-top: 16px;
+  padding: 14px 20px 26px;
+  background-color: #558f38;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2272%22%20height%3D%2272%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2230%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2242%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2254%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2260%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2266%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2218%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2230%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2266%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%220%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%220%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%226%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%226%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%226%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%220%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%220%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2236%22%20y%3D%220%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2218%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2218%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2218%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2254%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2254%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2254%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  image-rendering: pixelated;
+  border: 4px solid #2b2722;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  color: #fffaf0;
+}
+html[data-shelf-style="pixel"] .site-header h1 {
+  margin-top: 2.5rem;
+  color: #fffaf0;
+  text-shadow: 3px 3px 0 #23361a;
+}
+html[data-shelf-style="pixel"] .site-header p,
+html[data-shelf-style="pixel"] .site-header nav,
+html[data-shelf-style="pixel"] .site-header nav a,
+html[data-shelf-style="pixel"] .site-header nav button,
+html[data-shelf-style="pixel"] .site-header a {
+  color: #fffaf0;
+  text-shadow: 2px 2px 0 #23361a;
+}
+
+/* pixel mode: header, filter bar and bookcase stack into one wall — no gaps */
+html[data-shelf-style="pixel"] .site-header { box-shadow: none; border-bottom-width: 0; }
+html[data-shelf-style="pixel"] .shelf-toolbar {
+  margin-top: 0;
+  padding: 10px 20px 12px;
+  background-color: #558f38;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2272%22%20height%3D%2272%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2230%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2242%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2254%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2260%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2266%22%20y%3D%220%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2218%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2230%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2266%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%220%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%220%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2224%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%226%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%226%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2242%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%226%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2248%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%226%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2254%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%220%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2260%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%220%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2369ab47%22/%3E%3Crect%20x%3D%226%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%235b9a3c%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%2362a442%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2242%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234a7f30%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%23548f37%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2260%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%2266%22%20y%3D%2266%22%20width%3D%226%22%20height%3D%226%22%20fill%3D%22%234e8633%22/%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2236%22%20y%3D%220%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2218%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2218%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2218%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2236%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%220%22%20y%3D%2254%22%20width%3D%2272%22%20height%3D%222%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2254%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3Crect%20x%3D%2254%22%20y%3D%2254%22%20width%3D%222%22%20height%3D%2218%22%20fill%3D%22%233f6f2a%22/%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  image-rendering: pixelated;
+  border: 4px solid #2b2722;
+  border-top: 0;
+  color: #fffaf0;
+}
+html[data-shelf-style="pixel"] .shelf-toolbar button {
+  color: #fffaf0;
+  text-shadow: 2px 2px 0 #23361a;
+}
+html[data-shelf-style="pixel"] .shelf-toolbar select { text-shadow: none; }
+html[data-shelf-style="pixel"] .bookcase-frame.pixel-shelf { margin-top: 0; }
+/* pixel mode: dropdown pills (year / tag filters) look like little pixel signs too */
+html[data-shelf-style="pixel"] .shelf-toolbar select,
+html[data-shelf-style="pixel"] .pixel-shelf select {
+  border-radius: 0 !important;
+  border: 3px solid #2b2722 !important;
+  background: #f6efe1 !important;
+  color: #2b2722 !important;
+  font-family: "DotGothic16", ui-monospace, monospace;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  text-shadow: none;
+}
+html[data-shelf-style="pixel"] .shelf-toolbar select + svg,
+html[data-shelf-style="pixel"] .pixel-shelf select + svg {
+  color: #2b2722 !important;
 }

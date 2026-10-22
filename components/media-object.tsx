@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DefaultCover } from "./default-cover";
 import { Check, Ellipsis } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/lib/sample-data";
@@ -10,7 +11,12 @@ const platformColor = {
   pc: "bg-[#303036]",
 } as const;
 
-function CoverArt({ item }: { item: MediaItem }) {
+// Every object on a shelf shares one height so rows line up evenly.
+const SHELF_HEIGHT = 128;
+const COMPACT_HEIGHT = 100;
+const objectHeight = (compact: boolean) => (compact ? COMPACT_HEIGHT : SHELF_HEIGHT);
+
+function CoverArt({ item, plain = false }: { item: MediaItem; plain?: boolean }) {
   const style = {
     "--fallback-a": item.coverTone[0],
     "--fallback-b": item.coverTone[1],
@@ -19,16 +25,9 @@ function CoverArt({ item }: { item: MediaItem }) {
   return (
     <div className="cover-fallback absolute inset-0 overflow-hidden" style={style}>
       {item.coverUrl ? (
-        <img alt="" className="absolute inset-0 h-full w-full object-cover" src={item.coverUrl} />
-      ) : (
-        <>
-          <div className="absolute left-[14%] top-[16%] h-10 w-10 rounded-full bg-white/18" />
-          <div className="absolute bottom-[16%] left-[14%] h-1.5 w-1/2 rounded-full bg-white/36" />
-          <div className="absolute bottom-[23%] left-[14%] h-1 w-2/3 rounded-full bg-white/22" />
-          <span className="absolute left-[12%] top-[12%] max-w-[72%] text-[10px] font-semibold uppercase leading-tight tracking-[0.08em] text-white/82">
-            {item.title}
-          </span>
-        </>
+        <img alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover" src={item.coverUrl} />
+      ) : plain ? null : (
+        <DefaultCover item={item} />
       )}
     </div>
   );
@@ -94,15 +93,21 @@ function BookObject({
   facing?: boolean;
 }) {
   const pageCount = item.pageCount ?? 260;
-  const width = Math.max(32, Math.min(78, Math.round(pageCount / 11)));
-  const height = compact ? 100 : item.favorite || item.status === "in_progress" ? 140 : 126;
+  // Spine thickness follows page count, but stays slim so a closed book reads as a spine.
+  // On the short "Currently Enjoying" shelf a long title needs room for two columns,
+  // so the spine is at least as wide as a disc case there.
+  const longTitle = [...item.title].length > 3;
+  const width = compact
+    ? Math.max(longTitle ? 28 : 20, Math.min(32, Math.round(18 + pageCount / 60)))
+    : Math.max(22, Math.min(40, Math.round(20 + pageCount / 45)));
+  const height = objectHeight(compact);
   const isFacing = facing ?? (item.favorite || item.status === "in_progress");
 
   if (isFacing) {
-    const facingWidth = compact ? 74 : 92;
-    const facingHeight = compact ? 108 : 144;
-    const coverWidth = compact ? 70 : 88;
-    const coverHeight = compact ? 100 : 134;
+    const coverWidth = compact ? 68 : 86;
+    const coverHeight = height;
+    const facingWidth = coverWidth + 4;
+    const facingHeight = coverHeight + 8;
 
     return (
       <motion.div
@@ -111,12 +116,11 @@ function BookObject({
         style={{ width: facingWidth, height: facingHeight }}
       >
         <div
-          className="object-shadow relative overflow-hidden rounded-[6px] border border-black/10 bg-panel transition duration-200 group-hover:-translate-y-2 group-hover:rotate-[-1deg]"
+          className="object-shadow relative overflow-hidden rounded-[3px] border border-black/10 bg-panel transition duration-200 group-hover:-translate-y-2"
           style={{ width: coverWidth, height: coverHeight }}
         >
           <CoverArt item={item} />
-          <div className="absolute inset-y-0 left-0 w-3 bg-black/16" />
-          <div className="absolute inset-y-0 right-0 w-2 bg-white/18" />
+          <div className="absolute inset-y-0 left-[5px] w-px bg-black/15" />
         </div>
         <ObjectBadges item={item} />
       </motion.div>
@@ -127,21 +131,69 @@ function BookObject({
     <motion.div
       className="group relative flex items-end"
       layout
-      style={{ width: width + "px", height: height + "px" }}
+      style={{ width: width + "px", height: height + 8 + "px" }}
     >
       <div
-        className="object-shadow relative w-full overflow-hidden rounded-[5px] border border-black/10 transition duration-200 group-hover:-translate-y-2"
-        style={{ height: height - 8 + "px" }}
+        className="object-shadow relative w-full overflow-hidden rounded-[3px] transition duration-200 group-hover:-translate-y-2"
+        style={{ height: height + "px" }}
       >
-        <CoverArt item={item} />
-        <div className="absolute inset-y-0 left-0 w-[5px] bg-black/18" />
-        <div className="absolute inset-x-0 bottom-0 h-[18%] bg-black/10" />
-        <span className="absolute inset-x-1 bottom-2 line-clamp-3 text-center text-[9px] font-semibold leading-tight text-white/82 [writing-mode:vertical-rl]">
-          {item.title}
-        </span>
+        <SpineBackground item={item} />
+        <SpineSheen />
+        <SpineBands />
+        <SpineTitle height={objectHeight(compact)} title={item.title} top={compact ? 17 : 19} bottom={compact ? 31 : 34} serif author={spineAuthor(item.creator)} />
       </div>
-      <ObjectBadges item={item} />
+      <ObjectBadges item={item} spine />
     </motion.div>
+  );
+}
+
+function ThemeButton({
+  item,
+  playing,
+  progress,
+  onPlay,
+  small = false,
+}: {
+  item: MediaItem;
+  playing: boolean;
+  progress: number;
+  onPlay?: () => void;
+  small?: boolean;
+}) {
+  if (!item.themeYoutubeId) return null;
+  const size = small ? 22 : 26;
+  return (
+    <button
+      aria-label={`${playing ? "Pause" : "Play"} ${item.title} theme`}
+      className={cn(
+        "absolute z-20 grid touch-manipulation place-items-center rounded-full bg-black/70 text-white transition hover:bg-black/85",
+        small ? "bottom-7 left-1/2 -translate-x-1/2" : "bottom-2 right-2",
+      )}
+      style={{ width: size, height: size }}
+      type="button"
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation();
+        onPlay?.();
+      }}
+    >
+      {playing ? (
+        <svg className="absolute inset-0 -rotate-90" viewBox="0 0 28 28" aria-hidden="true" style={{ width: size, height: size }}>
+          <circle cx="14" cy="14" r="12.5" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+          <circle
+            cx="14"
+            cy="14"
+            r="12.5"
+            fill="none"
+            stroke="rgba(255,255,255,0.95)"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+            strokeDasharray={`${Math.max(0, Math.min(1, progress)) * 78.5} 78.5`}
+          />
+        </svg>
+      ) : null}
+      <span className="relative text-[9px] leading-none">{playing ? "❚❚" : "▶"}</span>
+    </button>
   );
 }
 
@@ -160,85 +212,205 @@ function DiscCase({
   spine: boolean;
   onPlay?: () => void;
 }) {
-  if (spine) return <DiscSpine item={item} onPlay={onPlay} />;
+  if (spine) return <DiscSpine item={item} compact={compact} playing={playing} progress={progress} onPlay={onPlay} />;
 
-  const size = compact ? 92 : item.favorite ? 128 : 118;
+  const height = objectHeight(compact);
+  const width = compact ? 68 : 86;
+
   return (
-    <div className="group relative grid place-items-end" style={{ width: size, height: size + 8 }}>
+    <div className="group relative grid place-items-end" style={{ width: width + 4, height: height + 8 }}>
+      {/* A video case rather than a book: dark plastic frame, a label strip on top
+          (like the matching spine), the cover under a glossy sleeve. */}
       <div
-        className="object-shadow relative overflow-hidden rounded-[8px] border border-white/45 bg-white/22 p-[7px] backdrop-blur transition duration-200 group-hover:-translate-y-1"
-        style={{ width: size, height: size }}
+        className="object-shadow relative overflow-hidden rounded-[5px] bg-[#141414] p-[3px] pt-0 transition duration-200 group-hover:-translate-y-2"
+        style={{ width, height }}
       >
-        <div className="relative h-full w-full overflow-hidden rounded-[4px] border border-black/10">
-          <CoverArt item={item} />
-          <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-white/10">
-            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35" />
-          </div>
+        <div className="grid h-[13px] place-items-center">
+          <span className="text-[6.5px] font-bold tracking-[0.14em] text-white/85">{videoSpineLabel(item)}</span>
         </div>
-        <div className="absolute inset-y-0 left-2 w-px bg-white/55" />
-        <div className="absolute inset-x-0 top-0 h-6 bg-white/18" />
-        {item.themeYoutubeId ? (
-          <button aria-label={`${playing ? "Pause" : "Play"} ${item.title}`} className="absolute bottom-0 left-0 z-20 grid h-11 w-11 touch-manipulation place-items-center text-[10px] font-bold text-white" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPlay?.(); }}>
-            <span className="relative grid h-8 w-8 place-items-center rounded-full bg-black/75 shadow-sm">
-            {playing ? (
-              <svg className="absolute inset-0 h-8 w-8 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
-                <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="2" />
-                <circle
-                  cx="14"
-                  cy="14"
-                  r="12"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.9)"
-                  strokeLinecap="round"
-                  strokeWidth="2"
-                  strokeDasharray={`${Math.max(0, Math.min(1, progress)) * 75.4} 75.4`}
-                />
-              </svg>
-            ) : null}
-            <span className="relative">{playing ? "Ⅱ" : "▶"}</span>
-            </span>
-          </button>
-        ) : null}
+        <div className="relative overflow-hidden rounded-[2px]" style={{ height: height - 16 }}>
+          <CoverArt item={item} />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.22)_0%,rgba(255,255,255,0.05)_28%,transparent_42%,transparent_70%,rgba(255,255,255,0.08)_100%)]" />
+        </div>
+        <div className="pointer-events-none absolute inset-y-[14px] left-[1px] w-[2px] rounded-full bg-white/10" />
+        <ThemeButton item={item} playing={playing} progress={progress} onPlay={onPlay} />
       </div>
       <ObjectBadges item={item} />
     </div>
   );
 }
 
-function DiscSpine({ item, onPlay }: { item: MediaItem; onPlay?: () => void }) {
+function DiscSpine({
+  item,
+  compact,
+  playing,
+  progress,
+  onPlay,
+}: {
+  item: MediaItem;
+  compact: boolean;
+  playing: boolean;
+  progress: number;
+  onPlay?: () => void;
+}) {
+  const height = objectHeight(compact);
   return (
-    <div className="group relative flex h-[118px] w-[34px] items-end">
-      <div className="object-shadow relative h-[112px] w-full overflow-hidden rounded-[5px] border border-white/40 bg-white/22 p-[4px] backdrop-blur transition duration-200 group-hover:-translate-y-1">
-        <div
-          className="cover-fallback absolute inset-[4px] rounded-[3px]"
-          style={
-            {
-              "--fallback-a": item.coverTone[0],
-              "--fallback-b": item.coverTone[1],
-            } as React.CSSProperties
-          }
-        />
-        <div className="absolute inset-y-0 left-1 w-px bg-white/50" />
-        {item.themeYoutubeId ? (
-          <button
-            aria-label={"Play " + item.title}
-            className="absolute bottom-1 left-1/2 z-20 grid h-8 w-8 -translate-x-1/2 touch-manipulation place-items-center rounded-full border border-white/30 bg-black/55 text-[9px] text-white"
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => { event.stopPropagation(); onPlay?.(); }}
-          >
-            ▶
-          </button>
-        ) : (
-          <div className="absolute bottom-2 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full border border-white/30 bg-white/10" />
-        )}
-        <span className="absolute inset-x-1 top-2 line-clamp-3 text-center text-[8px] font-semibold uppercase leading-tight text-white/82 [writing-mode:vertical-rl]">
-          {item.title}
-        </span>
+    <div className="group relative flex w-[28px] items-end" style={{ height: height + 8 }}>
+      <div
+        style={{ height }}
+        className="object-shadow relative w-full overflow-hidden rounded-[3px] transition duration-200 group-hover:-translate-y-2"
+      >
+        <SpineBackground item={item} />
+        <SpineSheen />
+        <div className="absolute inset-x-0 top-0 grid h-[15px] place-items-center bg-[#151515]">
+          <span className="text-[6.5px] font-bold tracking-[0.08em] text-white/85">{videoSpineLabel(item)}</span>
+        </div>
+        <SpineTitle height={objectHeight(compact)} title={item.title} top={19} bottom={item.themeYoutubeId ? 52 : item.status === "finished" || item.status === "in_progress" ? 24 : 6} />
+        <ThemeButton item={item} playing={playing} progress={progress} onPlay={onPlay} small />
       </div>
-      <ObjectBadges item={item} />
+      <ObjectBadges item={item} spine />
     </div>
   );
+}
+
+function SpineBackground({ item, vivid = false }: { item: MediaItem; vivid?: boolean }) {
+  return (
+    <>
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(180deg, ${item.coverTone[0]}, ${item.coverTone[1]})` }}
+      />
+      {item.coverUrl ? (
+        <div
+          aria-hidden="true"
+          data-spine-wash=""
+          className="absolute -inset-3 bg-cover bg-center"
+          style={{
+            backgroundImage: `url("${item.coverUrl}")`,
+            filter: vivid ? "blur(14px) saturate(2.1) brightness(1.08)" : "blur(16px) saturate(1.3)",
+            transform: "scale(2.2)",
+          }}
+        />
+      ) : null}
+      <div className={cn("absolute inset-0", vivid ? "bg-black/[0.14]" : "bg-black/30")} />
+    </>
+  );
+}
+
+// Short author name for a spine: surname for Western names, full name for CJK names.
+function spineAuthor(creator: string) {
+  const name = creator.trim();
+  if (!name || name === "Unknown") return undefined;
+  if (CJK.test(name)) return name.replace(/\s+/g, "");
+  const parts = name.split(/\s+/);
+  return parts[parts.length - 1];
+}
+
+function SpineBands() {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-x-0 top-[9px] h-[2px] bg-[#d9b56a]/80" />
+      <div className="pointer-events-none absolute inset-x-0 top-[13px] h-px bg-[#d9b56a]/55" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-[28px] h-px bg-[#d9b56a]/55" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-[24px] h-[2px] bg-[#d9b56a]/80" />
+    </>
+  );
+}
+
+function SpineSheen() {
+  return <div className="pointer-events-none absolute inset-0 rounded-[3px] ring-1 ring-inset ring-black/10" />;
+}
+
+const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/;
+
+/**
+ * What fits on a narrow spine: drop format labels that real spines leave off
+ * (「小説」, 「新装版」, 「上下巻セット」…) and the gaps around them, so
+ * 「小説　機動戦士ガンダム 逆襲のシャア　新装版」 reads 「機動戦士ガンダム逆襲のシャア」.
+ */
+function spineLabel(title: string) {
+  const cleaned = title
+    .replace(/^(小説|漫画|コミックス?|文庫|新書|ノベライズ|Novel)[\s\u3000:：・]+/i, "")
+    .replace(/[\s\u3000]*[(（]?(新装版|完全版|愛蔵版|決定版|文庫版|特装版|限定版|上下巻セット|全\d+巻セット|\d+巻セット)[)）]?$/, "")
+    .replace(/[\u3000]+/g, " ")
+    .trim();
+  const label = cleaned || title;
+  return CJK.test(label) ? label.replace(/\s+/g, "") : label;
+}
+
+function SpineTitle({
+  title: fullTitle,
+  top,
+  bottom,
+  serif = false,
+  author,
+  height = SHELF_HEIGHT,
+}: {
+  title: string;
+  top: number;
+  bottom: number;
+  serif?: boolean;
+  author?: string;
+  /** Height of the spine (shorter on the "Currently Enjoying" shelf). */
+  height?: number;
+}) {
+  const title = spineLabel(fullTitle);
+  // Japanese/Chinese spines: upright characters with airy spacing, like a real 背表紙.
+  const cjk = CJK.test(title);
+  const authorCjk = author ? CJK.test(author) : false;
+  // Rough fit check (vertical text): only show the author if the whole name fits under the title.
+  const available = height - top - bottom;
+  const titleLength = [...title].length * (cjk ? 15.3 : serif ? 6.6 : 6);
+  // Too long for one column (e.g. a short spine): set it in two narrower columns, like a
+  // real spine with a long title, instead of cutting it after two characters.
+  const twoColumns = titleLength > available;
+  const authorLength = author ? [...author].length * (authorCjk ? 11.2 : 5.4) + 10 : 0;
+  const showAuthor = !twoColumns && Boolean(author) && titleLength + authorLength <= available;
+  return (
+    <span
+      className="absolute inset-x-[2px] flex flex-col items-center justify-start overflow-hidden"
+      style={{ top, bottom }}
+    >
+      <span
+        className={cn(
+          "min-h-0 shrink-0 max-h-full overflow-hidden text-white [text-orientation:mixed] [writing-mode:vertical-rl]",
+          twoColumns
+            ? "max-w-[calc(100%-8px)] whitespace-normal break-all leading-[1.1]"
+            : "whitespace-nowrap leading-none [text-overflow:ellipsis]",
+          serif || cjk ? "font-serif font-medium" : "font-medium",
+          twoColumns
+            ? cjk
+              ? "text-[9.5px] tracking-[0.02em]"
+              : "text-[8px] tracking-normal"
+            : cjk
+              ? "text-[12.5px] tracking-[0.22em]"
+              : serif
+                ? "text-[11.5px] tracking-[0.02em]"
+                : "text-[10px] tracking-[0.02em]",
+        )}
+        style={{ maxHeight: Math.max(0, available) }}
+      >
+        {title}
+      </span>
+      {showAuthor ? (
+        <span
+          className={cn(
+            "mt-2.5 min-h-0 shrink overflow-hidden whitespace-nowrap font-serif leading-none text-white/80 [text-overflow:clip] [text-orientation:mixed] [writing-mode:vertical-rl]",
+            authorCjk ? "max-h-[60px] text-[9.5px] tracking-[0.18em]" : "max-h-[46px] text-[8.5px] tracking-[0.04em]",
+          )}
+        >
+          {author}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function videoSpineLabel(item: MediaItem) {
+  if (item.subtype === "anime") return "ANIME";
+  if (item.subtype === "us_tv" || item.subtype === "j_drama" || item.subtype === "k_drama") return "TV";
+  if (item.subtype === "documentary") return "DOC";
+  return "FILM";
 }
 
 function GameCase({
@@ -252,64 +424,64 @@ function GameCase({
 }) {
   if (spine) return <GameSpine item={item} compact={compact} />;
 
-  const width = compact ? 78 : 92;
-  const height = compact ? 116 : 138;
+  const height = objectHeight(compact);
+  const width = compact ? 78 : 100;
   const strip = platformColor[item.platformFamily ?? "playstation"];
 
   return (
-    <div className="group relative grid place-items-end" style={{ width, height: height + 8 }}>
+    <div className="group relative grid place-items-end" style={{ width: width + 4, height: height + 8 }}>
       <div
-        className="object-shadow relative h-full w-full overflow-hidden rounded-[7px] border border-black/10 bg-black/10 p-[6px] transition duration-200 group-hover:-translate-y-2"
+        className="object-shadow relative overflow-hidden rounded-[4px] bg-panel transition duration-200 group-hover:-translate-y-2"
+        style={{ width, height }}
       >
-        <div className={cn("absolute inset-x-0 top-0 h-4", strip)} />
-        <div className="relative mt-3 h-[calc(100%-12px)] overflow-hidden rounded-[4px]">
-          <CoverArt item={item} />
-        </div>
-        <div className="absolute inset-y-1 left-1 w-1.5 rounded-sm bg-white/14" />
+        <CoverArt item={item} />
+        <div className={cn("absolute inset-x-0 top-0 h-[3px]", strip)} />
+        <div className="pointer-events-none absolute inset-0 rounded-[4px] ring-1 ring-inset ring-black/10" />
       </div>
       <ObjectBadges item={item} />
     </div>
   );
 }
 
+const platformLabel = {
+  playstation: "PS",
+  nintendo: "NS",
+  xbox: "XB",
+  pc: "PC",
+} as const;
+
 function GameSpine({ item, compact }: { item: MediaItem; compact: boolean }) {
-  const strip = platformColor[item.platformFamily ?? "playstation"];
+  const platform = item.platformFamily ?? "playstation";
+  const height = objectHeight(compact);
 
   return (
-    <div
-      className="group relative flex h-[146px] items-end justify-end"
-      style={{ width: compact ? 54 : 36 }}
-    >
+    <div className="group relative flex w-[28px] items-end" style={{ height: height + 8 }}>
       <div
-        className="object-shadow relative h-[138px] w-[36px] overflow-hidden rounded-[6px] border border-black/10 bg-black/10 transition duration-200 group-hover:-translate-y-1"
+        style={{ height }}
+        className="object-shadow relative w-full overflow-hidden rounded-[3px] transition duration-200 group-hover:-translate-y-2"
       >
-        <div className={cn("absolute inset-y-1 left-1 w-2 rounded-sm", strip)} />
-        <div className="cover-fallback absolute inset-y-[6px] left-[11px] right-[4px] rounded-[3px]" style={
-          {
-            "--fallback-a": item.coverTone[0],
-            "--fallback-b": item.coverTone[1],
-          } as React.CSSProperties
-        } />
-        <div className="absolute inset-y-[6px] left-[11px] right-[4px] rounded-[3px] bg-black/18" />
-        <span className="absolute inset-y-3 left-[13px] right-[5px] overflow-hidden text-center text-[8px] font-semibold uppercase leading-tight text-white [writing-mode:vertical-rl]">
-          {item.title}
-        </span>
+        <SpineBackground item={item} vivid />
+        <SpineSheen />
+        <div className={cn("absolute inset-x-0 top-0 grid h-[17px] place-items-center", platformColor[platform])}>
+          <span className="text-[7px] font-extrabold tracking-[0.04em] text-white">{platformLabel[platform]}</span>
+        </div>
+        <div className={cn("absolute inset-x-0 bottom-0 h-[6px]", platformColor[platform])} />
+        <SpineTitle height={objectHeight(compact)} title={item.title} top={21} bottom={item.status === "finished" || item.status === "in_progress" ? 24 : 6} />
       </div>
-      <ObjectBadges item={item} />
+      <ObjectBadges item={item} spine />
     </div>
   );
 }
 
 function WritingObject({ item, compact }: { item: MediaItem; compact: boolean }) {
-  const width = compact ? 76 : 92;
-  const height = compact ? 104 : 124;
-  const tilt = ((hashString(item.id) % 7) - 3) * 1.4;
+  const width = compact ? 72 : 92;
+  const height = objectHeight(compact);
 
   return (
-    <div className="group relative grid place-items-end" style={{ width, height: height + 8 }}>
+    <div className="group relative grid place-items-end" style={{ width: width + 4, height: height + 8 }}>
       <div
-        className="object-shadow relative h-full w-full overflow-hidden rounded-[4px] border border-line bg-[#f8f2e4] transition duration-200 group-hover:-translate-y-2"
-        style={{ transform: `rotate(${tilt}deg)` }}
+        className="object-shadow relative w-full overflow-hidden rounded-[4px] border border-line bg-[#f8f2e4] transition duration-200 group-hover:-translate-y-2"
+        style={{ height }}
       >
         <div className="absolute -right-2 top-2 h-[88%] w-[88%] rounded-[3px] border border-[#d9ccb1] bg-[#efe4cf]" />
         <div className="absolute inset-2 rounded-[3px] border border-[#dacdb3] bg-[#fbf7ed]" />
@@ -331,31 +503,24 @@ function WritingObject({ item, compact }: { item: MediaItem; compact: boolean })
   );
 }
 
-function hashString(value: string) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-  }
-  return hash;
-}
-
-function ObjectBadges({ item }: { item: MediaItem }) {
+function ObjectBadges({ item, spine = false }: { item: MediaItem; spine?: boolean }) {
   return (
     <>
-      {item.type === "book" && (item.status === "in_progress" || item.status === "finished") ? (
+      {item.type !== "writing" && (item.status === "in_progress" || item.status === "finished") ? (
         <span
           aria-label={item.status === "in_progress" ? "In progress" : "Finished"}
           className={cn(
-            "absolute bottom-1 left-1 z-20 grid h-4 w-4 place-items-center rounded-full border border-white/35 text-white shadow-sm",
-            item.status === "in_progress" ? "bg-[#2f7181]" : "bg-[#315d45]",
+            "absolute z-20 grid place-items-center rounded-full text-white ring-1 ring-white/80",
+            spine ? "bottom-2 left-1/2 h-3.5 w-3.5 -translate-x-1/2" : "bottom-1.5 left-1.5 h-4 w-4",
+            item.status === "in_progress" ? "bg-[#2f7181]" : "bg-[#2f7d4f]",
           )}
           title={item.status === "in_progress" ? "In progress" : "Finished"}
         >
-          {item.status === "in_progress" ? <Ellipsis size={10} strokeWidth={2.5} /> : <Check size={10} strokeWidth={2.5} />}
+          {item.status === "in_progress" ? <Ellipsis size={spine ? 8 : 10} strokeWidth={2.5} /> : <Check size={spine ? 8 : 10} strokeWidth={2.75} />}
         </span>
       ) : null}
       {item.favorite ? (
-        <span className="absolute -right-1 top-2 h-5 w-3 rounded-b-full bg-[#d5a640] shadow-sm" />
+        <span className="absolute -right-1 top-2 h-5 w-3 rounded-b-full bg-[#d5a640]" />
       ) : null}
       {item.completionCount && item.completionCount > 1 ? (
         <span className="absolute -right-2 -top-1 rounded-full bg-ink px-1.5 py-0.5 text-[10px] font-semibold text-paper">
@@ -369,7 +534,7 @@ function ObjectBadges({ item }: { item: MediaItem }) {
 export function AuthorBookmark({ label }: { label: string }) {
   return (
     <div className="-mx-0.5 flex h-[150px] w-2 items-end justify-center pb-2">
-      <div className="flex h-16 w-2.5 items-start justify-center rounded-t-[2px] border border-[#c6a967]/70 bg-[#ead28e] pt-1 text-[8px] font-bold text-[#6a5228] shadow-sm">
+      <div className="flex h-16 w-2.5 items-start justify-center rounded-t-[2px] border border-line bg-panel pt-1 text-[8px] font-bold text-muted">
         {label}
       </div>
     </div>
@@ -381,8 +546,8 @@ export function YearShelfTag({ label }: { label: string }) {
 
   return (
     <div className="relative flex h-[150px] w-7 shrink-0 items-end justify-center pb-2" aria-label={label}>
-      <div className="absolute bottom-2 top-1 left-1/2 w-px -translate-x-1/2 bg-[#b9a98d]/65" />
-      <div className="relative flex w-5 flex-col items-center rounded-[3px] border border-[#d8ceb8] bg-[#fffaf0] py-1.5 font-serif text-[9px] font-bold leading-[11px] text-[#4c3620] shadow-[0_1px_2px_rgba(0,0,0,0.14),inset_0_1px_rgba(255,255,255,0.9)]">
+      <div className="absolute bottom-2 top-1 left-1/2 w-px -translate-x-1/2 bg-line" />
+      <div className="relative flex w-5 flex-col items-center rounded-[2px] border border-line bg-panel py-1.5 font-serif text-[9px] font-semibold leading-[11px] text-ink">
         {digits.map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
       </div>
     </div>

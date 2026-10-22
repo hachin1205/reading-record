@@ -1,5 +1,6 @@
 "use client";
 
+import { DefaultCover } from "./default-cover";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
@@ -79,6 +80,8 @@ export function AdminPage() {
   const [experiences, setExperiences] = useState<ContentExperience[]>([]);
   const [activeSection, setActiveSection] = useState<AdminSection>("writing");
   const [selectedType, setSelectedType] = useState<MediaType>("book");
+  // Which catalog a video search uses: anime (Jikan/AniList), J/K-dramas (TVmaze/TMDB) or films (iTunes).
+  const [videoSource, setVideoSource] = useState<"anime" | "dramas" | "films">("anime");
   const [query, setQuery] = useState("");
   const [importCandidate, setImportCandidate] = useState<MediaItem | null>(null);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
@@ -177,7 +180,7 @@ export function AdminPage() {
       selectedType === "book"
         ? "books"
         : selectedType === "video"
-          ? "anime"
+          ? videoSource
           : selectedType === "game"
             ? "games"
             : null;
@@ -185,7 +188,11 @@ export function AdminPage() {
       selectedType === "book"
         ? "book catalogs"
         : selectedType === "video"
-          ? "anime catalogs"
+          ? videoSource === "dramas"
+            ? "drama catalogs"
+            : videoSource === "films"
+              ? "film catalogs"
+              : "anime catalogs"
           : "SteamGridDB and VNDB";
     if (!endpoint || query.trim().length < 2) {
       setSourceResults([]);
@@ -218,7 +225,7 @@ export function AdminPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, selectedType]);
+  }, [query, selectedType, videoSource]);
   const quickTargets = useMemo(() => {
     const normalized = quickTargetQuery.trim().toLowerCase();
     return records
@@ -522,6 +529,11 @@ export function AdminPage() {
                   sourceError={sourceError}
                   sourceLoading={sourceLoading}
                   selectedType={selectedType}
+                  videoSource={videoSource}
+                  onVideoSourceChange={(source) => {
+                    setVideoSource(source);
+                    setImportCandidate(null);
+                  }}
                   onAddCandidate={addImportCandidate}
                   saving={pendingAction === "content"}
                   onCandidateChange={setImportCandidate}
@@ -647,6 +659,9 @@ function LoginPanel({
           <Lock size={16} />
           {checking ? "Checking session..." : loading ? "Signing in..." : "Enter workspace"}
         </button>
+        <Link className="mt-4 block text-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline" href="/reset-password">
+          Forgot password?
+        </Link>
       </form>
     </main>
   );
@@ -907,6 +922,8 @@ function ContentWorkspace({
   sourceError,
   sourceLoading,
   selectedType,
+  videoSource,
+  onVideoSourceChange,
   onAddCandidate,
   onCandidateChange,
   onQueryChange,
@@ -920,6 +937,8 @@ function ContentWorkspace({
   sourceError: string | null;
   sourceLoading: boolean;
   selectedType: MediaType;
+  videoSource: "anime" | "dramas" | "films";
+  onVideoSourceChange: (source: "anime" | "dramas" | "films") => void;
   onAddCandidate: () => void;
   onCandidateChange: (item: MediaItem | null) => void;
   onQueryChange: (value: string) => void;
@@ -928,13 +947,13 @@ function ContentWorkspace({
   saving: boolean;
 }) {
   return (
-    <div className="flex max-h-[calc(100vh-7.5rem)] min-h-[520px] flex-col rounded-lg border border-line bg-panel shadow-sm">
+    <div className="flex flex-col rounded-lg border border-line bg-panel shadow-sm xl:max-h-[calc(100vh-7.5rem)] xl:min-h-[520px]">
       <div className="border-b border-line/70 p-4">
         <h2 className="font-serif text-3xl font-semibold leading-none">Add content</h2>
         <p className="mt-1 text-sm text-muted">Search metadata, then refine manually.</p>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+      <div className="grid gap-4 p-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
         <div className="flex min-h-0 flex-col gap-4 rounded-md border border-line bg-paper p-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {typeOptions.map((option) => (
@@ -965,7 +984,11 @@ function ContentWorkspace({
                   selectedType === "book"
                     ? "English or Japanese title, author, or ISBN"
                     : selectedType === "video"
-                      ? "Japanese or English anime title"
+                      ? videoSource === "dramas"
+                        ? "Japanese, Korean or English drama title"
+                        : videoSource === "films"
+                          ? "Film or series title"
+                          : "Japanese or English anime title"
                       : selectedType === "game"
                         ? "Game title or VNDB id"
                         : "Title or creator"
@@ -990,13 +1013,43 @@ function ContentWorkspace({
             </p>
           ) : null}
           {selectedType === "video" ? (
-            <p className="text-xs text-muted">
-              Anime metadata and cover art provided by{" "}
-              <a className="underline underline-offset-2" href="https://jikan.moe/" rel="noreferrer" target="_blank">
-                Jikan / MyAnimeList
-              </a>
-              , with AniList as a fallback. Other video types can still be created manually.
-            </p>
+            <div className="grid gap-2">
+              <div className="inline-flex w-fit rounded-full border border-line bg-panel p-0.5 text-xs font-semibold" role="group" aria-label="Video catalog">
+                {([
+                  ["anime", "Anime"],
+                  ["dramas", "J/K-drama"],
+                  ["films", "Film / TV"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={videoSource === value}
+                    className={cn(
+                      "rounded-full px-3 py-1 transition-colors",
+                      videoSource === value ? "bg-ink text-paper" : "text-muted hover:text-ink",
+                    )}
+                    onClick={() => onVideoSourceChange(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted">
+                {videoSource === "dramas" ? (
+                  <>Japanese and Korean dramas from TVmaze (titles in their original language), plus TMDB when a TMDB key is set.</>
+                ) : videoSource === "films" ? (
+                  <>Films and TV series from the iTunes catalog.</>
+                ) : (
+                  <>
+                    Anime metadata and cover art provided by{" "}
+                    <a className="underline underline-offset-2" href="https://jikan.moe/" rel="noreferrer" target="_blank">
+                      Jikan / MyAnimeList
+                    </a>
+                    , with AniList as a fallback.
+                  </>
+                )}
+              </p>
+            </div>
           ) : null}
           {selectedType === "game" ? (
             <p className="text-xs text-muted">
@@ -1012,14 +1065,18 @@ function ContentWorkspace({
             </p>
           ) : null}
 
-          <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto pr-1">
+          <div className="grid max-h-[26rem] content-start gap-2 overflow-y-auto pr-1 xl:max-h-none xl:min-h-0 xl:flex-1">
             {sourceLoading ? (
               <div className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
                 Searching{" "}
                 {selectedType === "book"
                   ? "book catalogs"
                   : selectedType === "video"
-                    ? "anime catalogs"
+                    ? videoSource === "dramas"
+                      ? "drama catalogs"
+                      : videoSource === "films"
+                        ? "film catalogs"
+                        : "anime catalogs"
                     : "SteamGridDB and VNDB"}
                 ...
               </div>
@@ -1056,7 +1113,7 @@ function ContentWorkspace({
                 </div>
               </button>
             ))}
-            {results.length === 0 ? (
+            {results.length === 0 && !sourceLoading && !sourceError ? (
               <div className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
                 No matching source result. Create it manually.
               </div>
@@ -1064,7 +1121,7 @@ function ContentWorkspace({
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-col rounded-md border border-line bg-paper">
+        <div className="flex flex-col rounded-md border border-line bg-paper xl:min-h-0">
           <div className="border-b border-line/70 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
               Import draft
@@ -1075,7 +1132,7 @@ function ContentWorkspace({
           </div>
 
           {candidate ? (
-            <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4">
+            <div className="grid gap-4 p-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
               <div className="flex items-start gap-4">
                 <AdminThumb item={candidate} />
                 <div className="min-w-0">
@@ -1624,96 +1681,27 @@ function LibraryEditor({
 }
 
 function AdminThumb({ item, small = false }: { item: MediaItem; small?: boolean }) {
-  const style = {
-    "--thumb-a": item.coverTone[0],
-    "--thumb-b": item.coverTone[1],
-  } as React.CSSProperties;
-
-  if (item.type === "book" && item.coverUrl) {
-    return (
-      <img
-        alt=""
-        className={cn(
-          "shrink-0 rounded-[5px] border border-black/10 object-cover shadow-sm",
-          small ? "h-12 w-8" : "h-16 w-11",
-        )}
-        src={item.coverUrl}
-      />
-    );
-  }
-
-  if (item.type === "video") {
-    return (
-      <div
-        className={cn(
-          "grid shrink-0 place-items-center rounded-[5px] border border-black/10 bg-white/25 p-[4px] shadow-sm",
-          small ? "h-11 w-11" : "h-[52px] w-[52px]",
-        )}
-      >
-        <div className="relative h-full w-full overflow-hidden rounded-[3px] bg-[linear-gradient(160deg,var(--thumb-a),var(--thumb-b))]" style={style}>
-          <div className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/35 bg-white/10" />
-        </div>
-      </div>
-    );
-  }
-
-  if (item.type === "game") {
-    const strip =
-      item.platformFamily === "nintendo"
-        ? "bg-[#d82727]"
-        : item.platformFamily === "xbox"
-          ? "bg-[#27733d]"
-          : item.platformFamily === "pc"
-            ? "bg-[#303036]"
-            : "bg-[#1b5fc1]";
-
-    return (
-      <div
-        className={cn(
-          "relative shrink-0 overflow-hidden rounded-[5px] border border-black/10 bg-[linear-gradient(160deg,var(--thumb-a),var(--thumb-b))] shadow-sm",
-          small ? "h-12 w-9" : "h-16 w-12",
-        )}
-        style={style}
-      >
-        {item.coverUrl ? (
-          <img alt="" className="absolute inset-0 h-full w-full object-cover" src={item.coverUrl} />
-        ) : null}
-        <div className={cn("absolute inset-x-0 top-0 z-10 h-2", strip)} />
-        <div className="absolute inset-y-0 left-1 z-10 w-1 rounded-sm bg-white/18" />
-      </div>
-    );
-  }
-
-  if (item.type === "writing") {
-    return (
-      <div
-        className={cn(
-          "relative shrink-0 overflow-hidden rounded-[4px] border border-line bg-[#fbf7ed] shadow-sm",
-          small ? "h-12 w-9" : "h-16 w-12",
-        )}
-      >
-        <div className="absolute -right-2 top-2 h-[82%] w-[82%] rounded-[3px] border border-[#d9ccb1] bg-[#efe4cf]" />
-        <div className="absolute inset-2 rounded-[3px] border border-[#dacdb3]" />
-        <div className="absolute left-3 right-3 top-4 h-1 rounded-full bg-[#8a6f45]/35" />
-        <div className="absolute inset-x-3 top-7 space-y-1">
-          <div className="h-px bg-[#8a6f45]/24" />
-          <div className="h-px bg-[#8a6f45]/18" />
-          <div className="h-px w-2/3 bg-[#8a6f45]/18" />
-        </div>
-      </div>
-    );
-  }
-
+  // Real cover whenever the source has one (books, anime, films, games); otherwise the default printed cover.
+  const square = item.type === "video" && item.subtype !== "movie" && !item.coverUrl;
   return (
     <div
       className={cn(
-        "relative shrink-0 overflow-hidden rounded-[5px] border border-black/10 bg-[linear-gradient(160deg,var(--thumb-a),var(--thumb-b))] shadow-sm",
-        small ? "h-12 w-8" : "h-16 w-11",
+        "relative shrink-0 overflow-hidden rounded-[4px] border border-black/10 bg-paper shadow-sm",
+        square ? (small ? "h-11 w-11" : "h-[52px] w-[52px]") : small ? "h-12 w-8" : "h-16 w-11",
       )}
-      style={style}
     >
-      <div className="absolute inset-y-0 left-0 w-1.5 bg-black/18" />
-      <div className="absolute inset-x-2 bottom-2 h-1 rounded-full bg-white/35" />
+      {item.coverUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          src={item.coverUrl}
+        />
+      ) : (
+        <DefaultCover item={item} />
+      )}
     </div>
   );
 }
