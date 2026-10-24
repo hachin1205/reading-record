@@ -4,6 +4,7 @@ import { Sparkle, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { NoteBody } from "./note-body";
+import { apiFetch } from "@/lib/client-api";
 
 type Change = { before: string; after: string; why: string };
 type Turn = { role: "user" | "assistant"; content: string };
@@ -38,7 +39,7 @@ export function ClaudeHelper({
   const abort = useRef<AbortController | null>(null);
   const [provider, setProvider] = useState<"claude" | "gemini">("claude");
   useEffect(() => {
-    fetch("/api/claude", { cache: "no-store" })
+    apiFetch("/api/claude", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload: { data?: { provider?: "claude" | "gemini" } } | null) => {
         if (payload?.data?.provider) setProvider(payload.data.provider);
@@ -58,7 +59,7 @@ export function ClaudeHelper({
     }
     setBusy(true);
     try {
-      const response = await fetch("/api/claude", {
+      const response = await apiFetch("/api/claude", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode: "grammar", text }),
@@ -84,7 +85,7 @@ export function ClaudeHelper({
     setBusy(true);
     abort.current = new AbortController();
     try {
-      const response = await fetch("/api/claude", {
+      const response = await apiFetch("/api/claude", {
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: abort.current.signal,

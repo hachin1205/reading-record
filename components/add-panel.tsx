@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import type { MediaItem, MediaStatus } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { kindLabel } from "./journal-view";
+import { apiFetch } from "@/lib/client-api";
 
 type AddKind = "book" | "video" | "drama" | "game" | "note" | "plan";
 
@@ -128,7 +129,7 @@ export function AddPanel({
       setSearching(true);
       setSearchError(null);
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/search/${searchEndpoint[kind]}?q=${encodeURIComponent(query.trim())}`,
           { signal: controller.signal },
         );
@@ -161,7 +162,7 @@ export function AddPanel({
   const duplicate = mediaCandidate?.title ? findDuplicate(existing, mediaCandidate) : null;
 
   async function postJson<T>(url: string, body: unknown): Promise<T> {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),

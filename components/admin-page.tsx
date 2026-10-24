@@ -35,6 +35,7 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-shell";
+import { apiFetch } from "@/lib/client-api";
 
 type AdminSection = "writing" | "content" | "library";
 type ApiStatus = "loading" | "connected" | "unavailable";
@@ -113,7 +114,7 @@ export function AdminPage() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/auth/me", { cache: "no-store" })
+    apiFetch("/api/auth/me", { cache: "no-store" })
       .then((response) => {
         if (!active) return;
         setAuthStatus(response.ok ? "signed_in" : "signed_out");
@@ -131,9 +132,9 @@ export function AdminPage() {
     let active = true;
 
     Promise.all([
-      fetch("/api/media", { cache: "no-store" }),
-      fetch("/api/notes", { cache: "no-store" }),
-      fetch("/api/experiences", { cache: "no-store" }),
+      apiFetch("/api/media", { cache: "no-store" }),
+      apiFetch("/api/notes", { cache: "no-store" }),
+      apiFetch("/api/experiences", { cache: "no-store" }),
     ])
       .then(async ([mediaResponse, notesResponse, experiencesResponse]) => {
         if (!mediaResponse.ok || !notesResponse.ok || !experiencesResponse.ok) {
@@ -206,7 +207,7 @@ export function AdminPage() {
       setSourceLoading(true);
       setSourceError(null);
       try {
-        const response = await fetch(`/api/search/${endpoint}?q=${encodeURIComponent(query.trim())}`, {
+        const response = await apiFetch(`/api/search/${endpoint}?q=${encodeURIComponent(query.trim())}`, {
           signal: controller.signal,
         });
         const payload = (await response.json()) as { data?: MediaItem[]; error?: string };
@@ -262,7 +263,7 @@ export function AdminPage() {
           : undefined;
 
       if (!experience) {
-        const experienceResponse = await fetch("/api/experiences", {
+        const experienceResponse = await apiFetch("/api/experiences", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ contentId: selectedItem.id, status: draftStatus }),
@@ -278,7 +279,7 @@ export function AdminPage() {
         createdExperience = experience;
       }
 
-      const response = await fetch("/api/notes", {
+      const response = await apiFetch("/api/notes", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...draft, experienceId: experience.id }),
@@ -308,7 +309,7 @@ export function AdminPage() {
       showConfirmation(`Note saved to ${selectedItem.title}`);
     } catch (error) {
       if (createdExperience) {
-        await fetch(`/api/experiences/${encodeURIComponent(createdExperience.id)}`, {
+        await apiFetch(`/api/experiences/${encodeURIComponent(createdExperience.id)}`, {
           method: "DELETE",
         }).catch(() => undefined);
       }
@@ -323,7 +324,7 @@ export function AdminPage() {
     setSaveError(null);
     setPendingAction("content");
     try {
-      const response = await fetch("/api/media", {
+      const response = await apiFetch("/api/media", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(importCandidate),
@@ -347,7 +348,7 @@ export function AdminPage() {
     setSaveError(null);
     setPendingAction("library");
     try {
-      const response = await fetch(`/api/media/${encodeURIComponent(id)}`, {
+      const response = await apiFetch(`/api/media/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(changes),
@@ -374,7 +375,7 @@ export function AdminPage() {
     setSaveError(null);
     setPendingAction("delete");
     try {
-      const response = await fetch(`/api/media/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const response = await apiFetch(`/api/media/${encodeURIComponent(id)}`, { method: "DELETE" });
       const payload = (await response.json()) as { data?: { id: string }; error?: string };
       if (!response.ok || !payload.data?.id) {
         setSaveError(payload.error ?? "Unable to delete content");
@@ -395,7 +396,7 @@ export function AdminPage() {
   }
 
   async function login(email: string, password: string) {
-    const response = await fetch("/api/auth/login", {
+    const response = await apiFetch("/api/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -407,7 +408,7 @@ export function AdminPage() {
   }
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await apiFetch("/api/auth/logout", { method: "POST" });
     setAuthStatus("signed_out");
   }
 

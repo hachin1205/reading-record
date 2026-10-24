@@ -5,9 +5,10 @@ import { useState } from "react";
 import type { MediaItem } from "@/lib/sample-data";
 import { formatTagline, parseTagline } from "@/lib/tags";
 import { PlanBuilder } from "./plan-builder";
+import { apiFetch } from "@/lib/client-api";
 
 async function patch(id: string, body: Record<string, unknown>) {
-  const response = await fetch(`/api/media/${encodeURIComponent(id)}`, {
+  const response = await apiFetch(`/api/media/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),

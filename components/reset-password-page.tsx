@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/client-api";
 
 type Stage = "loading" | "request" | "sent" | "set" | "done";
 
@@ -48,7 +49,7 @@ export function ResetPasswordPage() {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/auth/request-reset", {
+      const response = await apiFetch("/api/auth/request-reset", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
@@ -72,7 +73,7 @@ export function ResetPasswordPage() {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      const response = await apiFetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ accessToken: token, password }),

@@ -1,32 +1,38 @@
 # Reading Record
 
-Next.js reading tracker backed by Supabase. Runtime reads and writes use Supabase's REST API; Drizzle owns SQL migrations.
+A personal reading / watching / playing record, live at https://kiyoguan.cc.
 
-## Supabase setup
+## How it fits together
 
-1. Create a Supabase project.
-2. Copy `.env.example` to `.env.local`.
-3. From the hosted project's **Connect** dialog, add the project URL, publishable key, secret key, and direct database URL. If your network is IPv4-only, use the session pooler on port `5432` for migrations.
-4. Run `npm run db:migrate`.
-5. Start the app with `npm run dev`.
+- **Site:** a static Next.js export (`next build` → `out/`), hosted on GitHub Pages. The `Site`
+  workflow rebuilds and publishes it on every push to `main` and once a day.
+- **Data and sign-in:** Supabase. The browser reads and writes the `media`, `notes` and
+  `experiences` tables directly with the publishable key. Row Level Security
+  (`supabase/migrations/`) lets anyone read and only addresses in `public.site_admins` write,
+  so editing works from any computer or phone once you sign in on `/admin`.
+- **Secret keys:** catalog searches and Claude/Gemini run in the `api` Supabase Edge Function
+  (`supabase/functions/api/`), deployed by the `Supabase function` workflow. Its keys are
+  Supabase function secrets (see `.env.example`).
+- **Sync:** pages load the live library from Supabase on every visit, so an edit shows
+  everywhere at once. Each build also bakes the current library into the HTML.
 
-The first `GET /api/media` seeds the current sample library when the media table is empty. Set `SEED_SAMPLE_DATA=false` to start empty.
+The browser-side stand-in for the old `/api/*` routes is `lib/client-api.ts`.
 
-## API
+## Local development
 
-- `GET /api/media`
-- `POST /api/media`
-- `PATCH /api/media/:id`
-- `DELETE /api/media/:id`
-- `GET /api/notes?contentId=:id`
-- `POST /api/notes`
-- `DELETE /api/notes/:id`
-- `GET /api/experiences?contentId=:id`
-- `POST /api/experiences`
-- `DELETE /api/experiences/:id`
-- `GET /api/search/books?q=:query` (NDL Search with optional openBD cover enrichment)
-- `GET /api/search/anime?q=:query` (AniList anime metadata and cover art)
+1. Copy `.env.example` to `.env.local` and fill in the Supabase URL and publishable key.
+2. `npm install`, then `npm run dev` (or double-click `start-dev.command`).
 
-`SUPABASE_SECRET_KEY` is server-only and must never use a `NEXT_PUBLIC_` prefix. The write routes must be protected with Supabase Auth before public deployment because the secret key bypasses Row Level Security.
+Searches and Claude/Gemini call the deployed Edge Function, so they need you signed in.
+
+## One-time setup
+
+1. Supabase → SQL Editor: run `supabase/migrations/20261024000000_static_site_security.sql`,
+   then add your sign-in address to `public.site_admins`.
+2. Supabase → Authentication → URL Configuration: add `https://kiyoguan.cc/reset-password/`
+   to the redirect URLs.
+3. GitHub → Settings → Secrets and variables → Actions: add the variables and secrets listed at
+   the top of the two workflow files.
+4. GitHub → Settings → Pages: Source "GitHub Actions", custom domain `kiyoguan.cc`.
 
 Book search metadata is provided by the National Diet Library's NDL Search API. Keep the NDL attribution visible in the UI, avoid concurrent or high-volume requests, and review NDL's application requirements before commercial use.

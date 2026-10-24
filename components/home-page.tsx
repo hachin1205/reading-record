@@ -28,6 +28,7 @@ import { parseTagline } from "@/lib/tags";
 import { FilterSelect, YearSelect } from "./year-select";
 import { JournalView } from "./journal-view";
 import { ThemeToggle } from "./theme-shell";
+import { apiFetch } from "@/lib/client-api";
 
 type ViewMode = "journal" | "shelf" | "matrix";
 
@@ -43,7 +44,7 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
   const [experiences, setExperiences] = useState<ContentExperience[]>([]);
   const refreshExperiences = useCallback(async () => {
     try {
-      const response = await fetch("/api/experiences", { cache: "no-store" });
+      const response = await apiFetch("/api/experiences", { cache: "no-store" });
       if (!response.ok) return;
       const payload = (await response.json()) as { data?: ContentExperience[] };
       if (Array.isArray(payload.data)) setExperiences(payload.data);
@@ -95,7 +96,7 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
     if (!canEdit) return;
     const now = new Date().toISOString();
     try {
-      const response = await fetch("/api/media", {
+      const response = await apiFetch("/api/media", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -132,7 +133,7 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
   // A password-reset email can land on the homepage; hand it to the reset page.
   useEffect(() => {
     if (window.location.hash.includes("type=recovery")) {
-      window.location.replace(`/reset-password${window.location.hash}`);
+      window.location.replace(`/reset-password/${window.location.hash}`);
     }
   }, []);
 
@@ -141,7 +142,7 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
   useEffect(() => {
     let cancelled = false;
     const check = () => {
-      fetch("/api/auth/me", { cache: "no-store" })
+      apiFetch("/api/auth/me", { cache: "no-store" })
         .then((response) => {
           if (!cancelled) setCanEdit(response.ok);
         })
@@ -168,7 +169,7 @@ export function HomePage({ initialItems = mediaItems }: { initialItems?: MediaIt
     const refreshLibrary = async () => {
       const startedAt = Date.now();
       try {
-        const response = await fetch("/api/media", { cache: "no-store" });
+        const response = await apiFetch("/api/media", { cache: "no-store" });
         if (!response.ok) return;
 
         const payload = (await response.json()) as { data?: MediaItem[] };

@@ -1,0 +1,4 @@
+# Only the settings this repo relies on. The "api" function checks sign-in itself
+# (publishable keys aren't JWTs), so Supabase's own JWT check is off for it.
+[functions.api]
+verify_jwt = false
