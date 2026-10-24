@@ -1,0 +1,6 @@
+# Only the settings this repo relies on. The "api" function checks sign-in itself
+# (publishable keys aren't JWTs), so Supabase's own JWT check is off for it.
+project_id = "reading-record"
+
+[functions.api]
+verify_jwt = false

@@ -15,3 +15,7 @@ pnpm-debug.log*
 # personal export files used by scripts/import-*.mjs
 imports/
 tsconfig.tsbuildinfo
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches

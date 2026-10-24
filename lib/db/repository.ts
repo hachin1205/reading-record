@@ -1,5 +1,4 @@
-import { mediaItems } from "@/lib/sample-data";
-import { supabaseRequest } from "@/lib/supabase/server";
+import { supabaseRequest } from "@/lib/supabase/rest";
 import type { ContentExperience, ContentNote, MediaItem } from "@/lib/types";
 
 type DatabaseMedia = {
@@ -159,18 +158,7 @@ function fromDatabaseExperience(row: DatabaseExperience): ContentExperience {
 }
 
 export async function listMedia(): Promise<MediaItem[]> {
-  let rows = await supabaseRequest<DatabaseMedia[]>("media?select=*&order=updated_at.desc");
-  if (rows.length === 0 && process.env.SEED_SAMPLE_DATA === "true") {
-    rows = [];
-    for (const item of mediaItems) {
-      const created = await supabaseRequest<DatabaseMedia[]>("media", {
-        method: "POST",
-        body: toDatabaseMedia(item),
-        prefer: "return=representation,resolution=ignore-duplicates",
-      });
-      rows.push(...created);
-    }
-  }
+  const rows = await supabaseRequest<DatabaseMedia[]>("media?select=*&order=updated_at.desc");
   return rows.map(fromDatabaseMedia);
 }
 

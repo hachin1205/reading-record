@@ -13,6 +13,7 @@ import { NoteBody, textLang } from "./note-body";
 import { paceLabel } from "@/lib/progress";
 import type { ContentExperience, ContentNote, MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/client-api";
 
 export type DetailOrigin = {
   centerX: number;
@@ -67,11 +68,11 @@ export function ContentDetail({
     setExperiences([]);
 
     Promise.all([
-      fetch(`/api/notes?contentId=${encodeURIComponent(item.id)}`, {
+      apiFetch(`/api/notes?contentId=${encodeURIComponent(item.id)}`, {
         cache: "no-store",
         signal: controller.signal,
       }),
-      fetch(`/api/experiences?contentId=${encodeURIComponent(item.id)}`, {
+      apiFetch(`/api/experiences?contentId=${encodeURIComponent(item.id)}`, {
         cache: "no-store",
         signal: controller.signal,
       }),
@@ -422,7 +423,7 @@ function NoteComposer({
     if (signature === lastSent.current && id) return null;
     const run = (async () => {
       setStatus("saving");
-      const response = await fetch(id ? `/api/notes/${encodeURIComponent(id)}` : "/api/notes", {
+      const response = await apiFetch(id ? `/api/notes/${encodeURIComponent(id)}` : "/api/notes", {
         method: id ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
         keepalive: true,
@@ -519,7 +520,7 @@ function NoteComposer({
     setBody("");
     setStatus("idle");
     setError(null);
-    if (id) await fetch(`/api/notes/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+    if (id) await apiFetch(`/api/notes/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
   }
 
   const statusText =
@@ -765,7 +766,7 @@ function EditPanel({
     }
     setSaving(true);
     try {
-      const response = await fetch(`/api/media/${encodeURIComponent(item.id)}`, {
+      const response = await apiFetch(`/api/media/${encodeURIComponent(item.id)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(changes),
@@ -802,7 +803,7 @@ function EditPanel({
       const now = new Date().toISOString();
       if (!item.viewings?.length && item.finishedAt) await recordViewing(item.id, item.finishedAt);
       await recordViewing(item.id, now);
-      const response = await fetch(`/api/media/${encodeURIComponent(item.id)}`, {
+      const response = await apiFetch(`/api/media/${encodeURIComponent(item.id)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -1074,7 +1075,7 @@ function DeleteControl({
     setBusy(true);
     onError?.(null);
     try {
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await apiFetch(url, { method: "DELETE" });
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(response.status === 401 ? "Please sign in again to delete." : payload.error ?? "Could not delete");
@@ -1147,7 +1148,7 @@ function CoverFinder({ item, onUpdated }: { item: MediaItem; onUpdated?: (item: 
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/search/${endpoint}?q=${encodeURIComponent(query.trim())}`);
+      const response = await apiFetch(`/api/search/${endpoint}?q=${encodeURIComponent(query.trim())}`);
       const payload = (await response.json()) as { data?: MediaItem[]; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Search failed");
       const withCovers = (payload.data ?? []).filter((result) => result.coverUrl);
@@ -1164,7 +1165,7 @@ function CoverFinder({ item, onUpdated }: { item: MediaItem; onUpdated?: (item: 
     setSavingUrl(url);
     setError(null);
     try {
-      const response = await fetch(`/api/media/${encodeURIComponent(item.id)}`, {
+      const response = await apiFetch(`/api/media/${encodeURIComponent(item.id)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ coverUrl: url }),
@@ -1388,7 +1389,7 @@ function kindName(item: MediaItem) {
 
 /** Store one finish in the history (experiences) table. */
 async function recordViewing(contentId: string, finishedAt: string) {
-  const response = await fetch("/api/experiences", {
+  const response = await apiFetch("/api/experiences", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ contentId, status: "finished", startedAt: finishedAt, finishedAt }),

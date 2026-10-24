@@ -1,0 +1,76 @@
+# Builds the static site and publishes it on GitHub Pages.
+# Runs on every push to main, once a day, and on demand (Actions → Site → Run workflow).
+# Every run reads the whole library from Supabase, which keeps the free project from pausing.
+# With the SAVE_SNAPSHOT variable set to true it also commits that copy as data/library.json.
+# This repo is public, so only turn that on if you're happy for the notes to be in it.
+#
+# Needs two repository variables (Settings → Secrets and variables → Actions → Variables):
+#   SUPABASE_URL              https://<project-ref>.supabase.co
+#   SUPABASE_PUBLISHABLE_KEY  sb_publishable_...   (public by design, safe to expose)
+#   SAVE_SNAPSHOT             true  (optional, see above)
+name: Site
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check settings
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Add the SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY repository variables first."
+            exit 1
+          fi
+      - run: npm ci --no-audit --no-fund
+      - name: Save a copy of the library
+        run: npm run export-library
+      - name: Commit the copy if it changed
+        if: vars.SAVE_SNAPSHOT == 'true'
+        run: |
+          if [ -n "$(git status --porcelain data/library.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/library.json
+            git commit -m "Update library snapshot"
+            git push
+          fi
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { DefaultCover } from "./default-cover";
 import { KindInput } from "./kind-input";
 import { subtypeValue } from "@/lib/subtypes";
+import { apiFetch } from "@/lib/client-api";
 
 const sources = [
   { id: "books", label: "Book" },
@@ -82,7 +83,7 @@ export function PlanBuilder({
     const timer = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const response = await fetch(`/api/search/${source}?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+        const response = await apiFetch(`/api/search/${source}?q=${encodeURIComponent(q)}`, { signal: controller.signal });
         const payload = (await response.json()) as { data?: MediaItem[] };
         setResults((payload.data ?? []).slice(0, 8));
       } catch {
@@ -114,7 +115,7 @@ export function PlanBuilder({
         const isOwn = existing.some((entry) => entry.id === item.id);
         const current = parseTagline(item.note);
         const note = formatTagline(current.text, current.tags, plan);
-        const response = await fetch(isOwn ? `/api/media/${encodeURIComponent(item.id)}` : "/api/media", {
+        const response = await apiFetch(isOwn ? `/api/media/${encodeURIComponent(item.id)}` : "/api/media", {
           method: isOwn ? "PATCH" : "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(
